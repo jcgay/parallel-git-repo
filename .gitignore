@@ -40,3 +40,6 @@ _testmain.go
 *.exe
 *.test
 *.prof
+
+# goxc
+.goxc.local.json
