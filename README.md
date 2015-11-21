@@ -2,6 +2,10 @@
 
 ## Build
 
+### Status
+
+[![Build Status](https://travis-ci.org/jcgay/parallel-git-repo.svg?branch=master)](https://travis-ci.org/jcgay/parallel-git-repo)
+
 ### Release
 
 - Configure Bintray deployment in `.goxc.local.json`:
