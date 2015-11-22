@@ -2,11 +2,12 @@ package main
 
 import "os"
 
-func ExampleRunCommand() {
+func ExampleRunCommandForMultipleRepositories() {
 	os.Args = []string{"parallel-git-repo"}
 
 	main()
 
 	// Output:
-	// 1
+	// /Users/jcgay/dev/maven-notifier
+	// /Users/jcgay/dev/maven-color
 }
