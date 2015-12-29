@@ -3,7 +3,7 @@ package main
 import "os"
 
 func ExampleRunCommandForMultipleRepositories() {
-	os.Args = []string{"parallel-git-repo"}
+	os.Args = []string{"parallel-git-repo", "echo"}
 
 	main()
 

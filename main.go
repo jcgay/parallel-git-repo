@@ -1,13 +1,18 @@
 package main
 
 import (
+	"github.com/codegangsta/cli"
 	"io"
 	"os"
 	"os/exec"
 )
 
 func main() {
-	run(os.Args, os.Stdout, os.Stderr, &RegisteredRepositories{})
+	app := cli.NewApp()
+	app.Name = "Parallel Git Repositories"
+	app.Usage = "Execute commands on multiple Git repositories at the same time!"
+	app.Commands = buildCommands()
+	app.Run(os.Args)
 }
 
 type Repositories interface {
@@ -28,4 +33,15 @@ func run(args []string, output io.Writer, error io.Writer, repos Repositories) {
 		command.Dir = repo
 		command.Run()
 	}
+}
+
+func buildCommands() []cli.Command {
+	commands := make([]cli.Command, 1)
+	commands = append(commands, cli.Command{
+		Name: "echo",
+		Action: func(context *cli.Context) {
+			run(os.Args, os.Stdout, os.Stderr, &RegisteredRepositories{})
+		},
+	})
+	return commands
 }
