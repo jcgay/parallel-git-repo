@@ -8,6 +8,6 @@ func ExampleRunCommandForMultipleRepositories() {
 	main()
 
 	// Output:
-	// /Users/jcgay/dev/maven-notifier
-	// /Users/jcgay/dev/maven-color
+	// maven-notifier: /Users/jcgay/dev/maven-notifier
+	// maven-color: /Users/jcgay/dev/maven-color
 }

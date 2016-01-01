@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 func main() {
@@ -88,7 +89,7 @@ func (runner *Runner) Run() {
 		command.Dir = repo
 		command.Run()
 
-		fmt.Fprint(runner.writer, output.String())
+		fmt.Fprint(runner.writer, filepath.Base(repo)+": "+output.String())
 	}
 }
 
