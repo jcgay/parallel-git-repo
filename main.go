@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
 )
 
 func main() {
@@ -63,6 +65,16 @@ func (command *EchoCommand) Options() []string {
 	return []string{}
 }
 
+type GitMergeCommand struct{}
+
+func (command *GitMergeCommand) Executable() string {
+	return "git"
+}
+
+func (command *GitMergeCommand) Options() []string {
+	return []string{"merge", "$1"}
+}
+
 type Runner struct {
 	RunnableCommand
 
@@ -78,12 +90,12 @@ func NewRunner(command RunnableCommand) *Runner {
 	}
 }
 
-func (runner *Runner) Run() {
+func (runner *Runner) Run(args cli.Args) {
 	for _, repo := range runner.repos.List() {
 		output := new(bytes.Buffer)
 		errorOutput := new(bytes.Buffer)
 
-		command := exec.Command(runner.RunnableCommand.Executable(), runner.RunnableCommand.Options()...)
+		command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
 		command.Stdout = output
 		command.Stderr = errorOutput
 		command.Dir = repo
@@ -93,15 +105,34 @@ func (runner *Runner) Run() {
 	}
 }
 
+var option = regexp.MustCompile(`\$([0-9]+)`)
+
+func forwardArgs(opts []string, args cli.Args) []string {
+	result := make([]string, 0)
+	for _, opt := range opts {
+		if opt == "$@" {
+			result = append(result, args...)
+		} else if option.MatchString(opt) {
+			result = append(result, option.ReplaceAllStringFunc(opt, func(substring string) string {
+				index, _ := strconv.Atoi(substring[1:])
+				return args[index-1]
+			}))
+		} else {
+			result = append(result, opt)
+		}
+	}
+	return result
+}
+
 func buildCommands() []cli.Command {
 	commands := make([]cli.Command, 1)
 	commands = append(commands, cli.Command{Name: "echo", Action: func(context *cli.Context) {
-		NewRunner(&EchoCommand{}).Run()
+		NewRunner(&EchoCommand{}).Run(context.Args())
 	},
 	}, cli.Command{Name: "pull", Action: func(context *cli.Context) {
-		NewRunner(&GitPullCommand{}).Run()
+		NewRunner(&GitPullCommand{}).Run(context.Args())
 	}}, cli.Command{Name: "current-branch", Action: func(context *cli.Context) {
-		NewRunner(&GitShowCurrentBranchCommand{}).Run()
+		NewRunner(&GitShowCurrentBranchCommand{}).Run(context.Args())
 	}})
 	return commands
 }
