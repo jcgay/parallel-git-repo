@@ -99,9 +99,14 @@ func (runner *Runner) Run(args cli.Args) {
 		command.Stdout = output
 		command.Stderr = errorOutput
 		command.Dir = repo
-		command.Run()
+		err := command.Run()
 
-		fmt.Fprint(runner.writer, filepath.Base(repo)+": "+output.String())
+		if err != nil {
+			println(err.Error())
+			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+errorOutput.String())
+		} else {
+			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+output.String())
+		}
 	}
 }
 
