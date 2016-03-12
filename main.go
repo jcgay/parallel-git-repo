@@ -33,6 +33,7 @@ func (repos *RegisteredRepositories) List() []string {
 type RunnableCommand interface {
 	Executable() string
 	Options() []string
+	Output(output string) string
 }
 
 type GitPullCommand struct{}
@@ -45,6 +46,10 @@ func (command *GitPullCommand) Options() []string {
 	return []string{"pull", "--rebase=preserve"}
 }
 
+func (command *GitPullCommand) Output(output string) string {
+	return output
+}
+
 type GitShowCurrentBranchCommand struct{}
 
 func (command *GitShowCurrentBranchCommand) Executable() string {
@@ -53,6 +58,10 @@ func (command *GitShowCurrentBranchCommand) Executable() string {
 
 func (command *GitShowCurrentBranchCommand) Options() []string {
 	return []string{"symbolic-ref", "--short", "HEAD"}
+}
+
+func (command *GitShowCurrentBranchCommand) Output(output string) string {
+	return output
 }
 
 type EchoCommand struct{}
@@ -65,6 +74,10 @@ func (command *EchoCommand) Options() []string {
 	return []string{}
 }
 
+func (command *EchoCommand) Output(output string) string {
+	return output
+}
+
 type GitMergeCommand struct{}
 
 func (command *GitMergeCommand) Executable() string {
@@ -73,6 +86,10 @@ func (command *GitMergeCommand) Executable() string {
 
 func (command *GitMergeCommand) Options() []string {
 	return []string{"merge", "$1"}
+}
+
+func (command *GitMergeCommand) Output(output string) string {
+	return output
 }
 
 type Runner struct {
@@ -102,10 +119,9 @@ func (runner *Runner) Run(args cli.Args) {
 		err := command.Run()
 
 		if err != nil {
-			println(err.Error())
-			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+errorOutput.String())
+			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+err.Error()+"\n"+errorOutput.String())
 		} else {
-			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+output.String())
+			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(output.String()))
 		}
 	}
 }

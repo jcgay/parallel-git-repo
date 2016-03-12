@@ -43,6 +43,10 @@ func (command *PrintArgumentsCommand) Options() []string {
 	return []string{"$@"}
 }
 
+func (command *PrintArgumentsCommand) Output(output string) string {
+	return output
+}
+
 func TestRunCommandWithArguments(t *testing.T) {
 	assert := assert.New(t)
 	output := new(bytes.Buffer)
@@ -64,6 +68,10 @@ func (command *PrintArgumentsWithIndexCommand) Executable() string {
 
 func (command *PrintArgumentsWithIndexCommand) Options() []string {
 	return []string{"$1", "path/$10", "option=$3", "$4-$7"}
+}
+
+func (command *PrintArgumentsWithIndexCommand) Output(output string) string {
+	return output
 }
 
 func TestRunCommandWithIndexedArguments(t *testing.T) {
