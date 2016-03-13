@@ -133,6 +133,8 @@ func buildCommands() []cli.Command {
 		NewRunner(&command.GitShowCurrentBranch{}).Run(context.Args())
 	}}, cli.Command{Name: "merge", Usage: "Join two or more development histories together", Action: func(context *cli.Context) {
 		NewRunner(&command.GitMerge{}).Run(context.Args())
+	}}, cli.Command{Name: "fetch", Usage: "Download objects and refs from another repository and prune", Action: func(context *cli.Context) {
+		NewRunner(&command.GitFetch{}).Run(context.Args())
 	}})
 	return commands
 }
