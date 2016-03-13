@@ -10,14 +10,13 @@ import (
 	"testing"
 )
 
-func ExampleRunCommandForMultipleRepositories() {
-	os.Args = []string{"parallel-git-repo", "echo"}
+func ExampleShowVersion() {
+	os.Args = []string{"parallel-git-repo", "-v"}
 
 	main()
 
 	// Output:
-	// maven-notifier: /Users/jcgay/dev/maven-notifier
-	// maven-color: /Users/jcgay/dev/maven-color
+	// Parallel Git Repositories version 0.0.0
 }
 
 type SingleTempRepository struct {
@@ -48,7 +47,6 @@ func (command *PrintArgumentsCommand) Output(output string) string {
 }
 
 func TestRunCommandWithArguments(t *testing.T) {
-	assert := assert.New(t)
 	output := new(bytes.Buffer)
 	repos := &SingleTempRepository{}
 
@@ -57,6 +55,7 @@ func TestRunCommandWithArguments(t *testing.T) {
 	runner.repos = repos
 	runner.Run(cli.Args{"first", "second"})
 
+	assert := assert.New(t)
 	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first second\n")
 }
 
@@ -75,7 +74,6 @@ func (command *PrintArgumentsWithIndexCommand) Output(output string) string {
 }
 
 func TestRunCommandWithIndexedArguments(t *testing.T) {
-	assert := assert.New(t)
 	output := new(bytes.Buffer)
 	repos := &SingleTempRepository{}
 
@@ -84,5 +82,24 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	runner.repos = repos
 	runner.Run(cli.Args{"first", "second", "third", "4", "5", "6", "7", "8", "9", "10"})
 
+	assert := assert.New(t)
 	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first path/10 option=third 4-7\n")
+}
+
+func TestListRepositories(t *testing.T) {
+	dir, _ := ioutil.TempDir("", "ParallelGitReposListRepositories")
+	defer os.RemoveAll(dir)
+	config := `repositories:
+  - /Users/jcgay/dev/maven-notifier
+  - /Users/jcgay/dev/maven-color
+`
+	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
+	repos := RegisteredRepositories{dir}
+
+	result := repos.List()
+
+	assert := assert.New(t)
+	assert.ThatBool(len(result) == 2).IsTrue()
+	assert.ThatString(result[0]).IsEqualTo("/Users/jcgay/dev/maven-notifier")
+	assert.ThatString(result[1]).IsEqualTo("/Users/jcgay/dev/maven-color")
 }

@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/mitchellh/go-homedir"
+	"gopkg.in/yaml.v2"
 	"io"
+	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -24,10 +28,27 @@ type Repositories interface {
 	List() []string
 }
 
-type RegisteredRepositories struct{}
+type RegisteredRepositories struct {
+	homeDir string
+}
 
 func (repos *RegisteredRepositories) List() []string {
-	return []string{"/Users/jcgay/dev/maven-notifier", "/Users/jcgay/dev/maven-color"}
+	data, err := ioutil.ReadFile(repos.homeDir + "/.parallel-git-repositories")
+	if err != nil {
+		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is correctly set...\n%v", repos.homeDir, err)
+	}
+
+	config := make(map[interface{}]interface{})
+	if err := yaml.Unmarshal(data, &config); err != nil {
+		log.Fatalf("Configuration file %s/.parallel-git-repositories is not a valid yaml file.\n%v", repos.homeDir, err)
+	}
+
+	all := config["repositories"].([]interface{})
+	result := make([]string, len(all))
+	for i, repo := range all {
+		result[i] = repo.(string)
+	}
+	return result
 }
 
 type RunnableCommand interface {
@@ -100,9 +121,13 @@ type Runner struct {
 }
 
 func NewRunner(command RunnableCommand) *Runner {
+	home, err := homedir.Dir()
+	if err != nil {
+		log.Fatalf("Cannot read user home directory.\n%v", err)
+	}
 	return &Runner{
 		RunnableCommand: command,
-		repos:           &RegisteredRepositories{},
+		repos:           &RegisteredRepositories{home},
 		writer:          os.Stdout,
 	}
 }
