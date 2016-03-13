@@ -124,6 +124,8 @@ func buildCommands() []cli.Command {
 		NewRunner(&command.GitPull{}).Run(context.Args())
 	}}, cli.Command{Name: "current-branch", Action: func(context *cli.Context) {
 		NewRunner(&command.GitShowCurrentBranch{}).Run(context.Args())
+	}}, cli.Command{Name: "merge", Action: func(context *cli.Context) {
+		NewRunner(&command.GitMerge{}).Run(context.Args())
 	}})
 	return commands
 }

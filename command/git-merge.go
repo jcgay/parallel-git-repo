@@ -7,7 +7,7 @@ func (command *GitMerge) Executable() string {
 }
 
 func (command *GitMerge) Options() []string {
-	return []string{"merge", "$1"}
+	return []string{"merge", "--log", "--no-ff", "--no-commit", "$1"}
 }
 
 func (command *GitMerge) Output(output string) string {
