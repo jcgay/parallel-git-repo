@@ -19,11 +19,14 @@ import (
 	"sync"
 )
 
+var VERSION = "unknown-snapshot"
+
 func main() {
 	app := cli.NewApp()
 	app.Name = "Parallel Git Repositories"
 	app.Usage = "Execute commands on multiple Git repositories in parallel!"
 	app.Commands = buildCommands()
+	app.Version = VERSION
 	app.Run(os.Args)
 }
 
@@ -124,11 +127,11 @@ func buildCommands() []cli.Command {
 	commands = append(commands, cli.Command{Name: "echo", Action: func(context *cli.Context) {
 		NewRunner(&command.Echo{}).Run(context.Args())
 	},
-	}, cli.Command{Name: "pull", Action: func(context *cli.Context) {
+	}, cli.Command{Name: "pull", Usage: "Fetch from and integrate with another repository or a local branch", Action: func(context *cli.Context) {
 		NewRunner(&command.GitPull{}).Run(context.Args())
-	}}, cli.Command{Name: "current-branch", Action: func(context *cli.Context) {
+	}}, cli.Command{Name: "current-branch", Usage: "Get current checkout branch from a repository", Action: func(context *cli.Context) {
 		NewRunner(&command.GitShowCurrentBranch{}).Run(context.Args())
-	}}, cli.Command{Name: "merge", Action: func(context *cli.Context) {
+	}}, cli.Command{Name: "merge", Usage: "Join two or more development histories together", Action: func(context *cli.Context) {
 		NewRunner(&command.GitMerge{}).Run(context.Args())
 	}})
 	return commands

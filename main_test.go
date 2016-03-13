@@ -16,7 +16,7 @@ func ExampleShowVersion() {
 	main()
 
 	// Output:
-	// Parallel Git Repositories version 0.0.0
+	// Parallel Git Repositories version unknown-snapshot
 }
 
 type SingleTempRepository struct {
