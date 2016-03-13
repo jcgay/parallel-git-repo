@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/codegangsta/cli"
+	"github.com/jcgay/parallel-git-repo/command"
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -55,62 +56,6 @@ type RunnableCommand interface {
 	Executable() string
 	Options() []string
 	Output(output string) string
-}
-
-type GitPullCommand struct{}
-
-func (command *GitPullCommand) Executable() string {
-	return "git"
-}
-
-func (command *GitPullCommand) Options() []string {
-	return []string{"pull", "--rebase=preserve"}
-}
-
-func (command *GitPullCommand) Output(output string) string {
-	return output
-}
-
-type GitShowCurrentBranchCommand struct{}
-
-func (command *GitShowCurrentBranchCommand) Executable() string {
-	return "git"
-}
-
-func (command *GitShowCurrentBranchCommand) Options() []string {
-	return []string{"symbolic-ref", "--short", "HEAD"}
-}
-
-func (command *GitShowCurrentBranchCommand) Output(output string) string {
-	return output
-}
-
-type EchoCommand struct{}
-
-func (command *EchoCommand) Executable() string {
-	return "pwd"
-}
-
-func (command *EchoCommand) Options() []string {
-	return []string{}
-}
-
-func (command *EchoCommand) Output(output string) string {
-	return output
-}
-
-type GitMergeCommand struct{}
-
-func (command *GitMergeCommand) Executable() string {
-	return "git"
-}
-
-func (command *GitMergeCommand) Options() []string {
-	return []string{"merge", "$1"}
-}
-
-func (command *GitMergeCommand) Output(output string) string {
-	return output
 }
 
 type Runner struct {
@@ -173,12 +118,12 @@ func forwardArgs(opts []string, args cli.Args) []string {
 func buildCommands() []cli.Command {
 	commands := make([]cli.Command, 1)
 	commands = append(commands, cli.Command{Name: "echo", Action: func(context *cli.Context) {
-		NewRunner(&EchoCommand{}).Run(context.Args())
+		NewRunner(&command.Echo{}).Run(context.Args())
 	},
 	}, cli.Command{Name: "pull", Action: func(context *cli.Context) {
-		NewRunner(&GitPullCommand{}).Run(context.Args())
+		NewRunner(&command.GitPull{}).Run(context.Args())
 	}}, cli.Command{Name: "current-branch", Action: func(context *cli.Context) {
-		NewRunner(&GitShowCurrentBranchCommand{}).Run(context.Args())
+		NewRunner(&command.GitShowCurrentBranch{}).Run(context.Args())
 	}})
 	return commands
 }
