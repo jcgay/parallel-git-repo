@@ -135,6 +135,8 @@ func buildCommands() []cli.Command {
 		NewRunner(&command.GitMerge{}).Run(context.Args())
 	}}, cli.Command{Name: "fetch", Usage: "Download objects and refs from another repository and prune", Action: func(context *cli.Context) {
 		NewRunner(&command.GitFetch{}).Run(context.Args())
+	}}, cli.Command{Name: "status", Usage: "Show the working tree status", Action: func(context *cli.Context) {
+		NewRunner(&command.GitStatus{}).Run(context.Args())
 	}})
 	return commands
 }
