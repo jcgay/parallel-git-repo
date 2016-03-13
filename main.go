@@ -137,6 +137,8 @@ func buildCommands() []cli.Command {
 		NewRunner(&command.GitFetch{}).Run(context.Args())
 	}}, cli.Command{Name: "status", Usage: "Show the working tree status", Action: func(context *cli.Context) {
 		NewRunner(&command.GitStatus{}).Run(context.Args())
+	}}, cli.Command{Name: "checkout", Usage: "Switch branches or restore working tree files", Action: func(context *cli.Context) {
+		NewRunner(&command.GitCheckout{}).Run(context.Args())
 	}})
 	return commands
 }
