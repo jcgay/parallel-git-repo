@@ -139,6 +139,10 @@ func buildCommands() []cli.Command {
 		NewRunner(&command.GitStatus{}).Run(context.Args())
 	}}, cli.Command{Name: "checkout", Usage: "Switch branches or restore working tree files", Action: func(context *cli.Context) {
 		NewRunner(&command.GitCheckout{}).Run(context.Args())
+	}}, cli.Command{Name: "ulg", Usage: "Log commit(s) from tracking branch not present in local branch", Action: func(context *cli.Context) {
+		NewRunner(&command.GitUlg{}).Run(context.Args())
+	}}, cli.Command{Name: "llg", Usage: "Log unpushed commut(s)", Action: func(context *cli.Context) {
+		NewRunner(&command.GitLlg{}).Run(context.Args())
 	}})
 	return commands
 }
