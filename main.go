@@ -16,12 +16,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "Parallel Git Repositories"
-	app.Usage = "Execute commands on multiple Git repositories at the same time!"
+	app.Usage = "Execute commands on multiple Git repositories in parallel!"
 	app.Commands = buildCommands()
 	app.Run(os.Args)
 }
@@ -79,18 +80,24 @@ func NewRunner(command RunnableCommand) *Runner {
 }
 
 func (runner *Runner) Run(args cli.Args) {
+	wg := sync.WaitGroup{}
 	for _, repo := range runner.repos.List() {
-		output := new(bytes.Buffer)
-		errorOutput := new(bytes.Buffer)
+		wg.Add(1)
+		go func(repo string) {
+			defer wg.Done()
+			output := new(bytes.Buffer)
+			errorOutput := new(bytes.Buffer)
 
-		command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
-		command.Stdout = output
-		command.Stderr = errorOutput
-		command.Dir = repo
-		err := command.Run()
+			command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
+			command.Stdout = output
+			command.Stderr = errorOutput
+			command.Dir = repo
+			err := command.Run()
 
-		fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), strings.TrimSpace(errorOutput.String()), err))
+			fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), strings.TrimSpace(errorOutput.String()), err))
+		}(repo)
 	}
+	wg.Wait()
 }
 
 var option = regexp.MustCompile(`\$([0-9]+)`)
