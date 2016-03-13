@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 func main() {
@@ -55,7 +56,7 @@ func (repos *RegisteredRepositories) List() []string {
 type RunnableCommand interface {
 	Executable() string
 	Options() []string
-	Output(output string) string
+	Output(output string, errOutput string, err error) string
 }
 
 type Runner struct {
@@ -88,11 +89,7 @@ func (runner *Runner) Run(args cli.Args) {
 		command.Dir = repo
 		err := command.Run()
 
-		if err != nil {
-			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+err.Error()+"\n"+errorOutput.String())
-		} else {
-			fmt.Fprint(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(output.String()))
-		}
+		fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), strings.TrimSpace(errorOutput.String()), err))
 	}
 }
 

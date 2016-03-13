@@ -7,9 +7,9 @@ func (command *GitPull) Executable() string {
 }
 
 func (command *GitPull) Options() []string {
-	return []string{"pull", "--rebase=preserve"}
+	return []string{"pull", "--quiet", "--rebase=preserve"}
 }
 
-func (command *GitPull) Output(output string) string {
-	return output
+func (command *GitPull) Output(output string, errOutput string, err error) string {
+	return tickOutput(err)
 }

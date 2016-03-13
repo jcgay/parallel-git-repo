@@ -10,6 +10,6 @@ func (command *Echo) Options() []string {
 	return []string{}
 }
 
-func (command *Echo) Output(output string) string {
+func (command *Echo) Output(output string, errOutput string, err error) string {
 	return output
 }
