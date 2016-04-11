@@ -145,6 +145,8 @@ func buildCommands() []cli.Command {
 		NewRunner(&command.GitLlg{}).Run(context.Args())
 	}}, cli.Command{Name: "merge-abort", Usage: "Abort current merge", Action: func(context *cli.Context) {
 		NewRunner(&command.GitMergeAbort{}).Run(context.Args())
+	}}, cli.Command{Name: "run", Usage: "Run an arbitrary command", Action: func(context *cli.Context) {
+		NewRunner(&command.Run{ToExec: context.Args()}).Run(context.Args())
 	}})
 	return commands
 }
