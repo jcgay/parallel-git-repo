@@ -143,28 +143,7 @@ func buildCommands() []cli.Command {
 	configuration := NewConfiguration(home)
 
 	commands := make([]cli.Command, 0)
-	commands = append(commands, cli.Command{Name: "echo", Action: func(context *cli.Context) {
-		NewRunner(&command.Echo{}, configuration).Run(context.Args())
-	},
-	}, cli.Command{Name: "pull", Usage: "Fetch from and integrate with another repository or a local branch", Action: func(context *cli.Context) {
-		NewRunner(&command.GitPull{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "current-branch", Usage: "Get current checkout branch from a repository", Action: func(context *cli.Context) {
-		NewRunner(&command.GitShowCurrentBranch{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "merge", Usage: "Join two or more development histories together", Action: func(context *cli.Context) {
-		NewRunner(&command.GitMerge{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "fetch", Usage: "Download objects and refs from another repository and prune", Action: func(context *cli.Context) {
-		NewRunner(&command.GitFetch{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "status", Usage: "Show the working tree status", Action: func(context *cli.Context) {
-		NewRunner(&command.GitStatus{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "checkout", Usage: "Switch branches or restore working tree files", Action: func(context *cli.Context) {
-		NewRunner(&command.GitCheckout{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "ulg", Usage: "Log commit(s) from tracking branch not present in local branch", Action: func(context *cli.Context) {
-		NewRunner(&command.GitUlg{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "llg", Usage: "Log unpushed commut(s)", Action: func(context *cli.Context) {
-		NewRunner(&command.GitLlg{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "merge-abort", Usage: "Abort current merge", Action: func(context *cli.Context) {
-		NewRunner(&command.GitMergeAbort{}, configuration).Run(context.Args())
-	}}, cli.Command{Name: "run", Usage: "Run an arbitrary command", Action: func(context *cli.Context) {
+	commands = append(commands, cli.Command{Name: "run", Usage: "Run an arbitrary command", Action: func(context *cli.Context) {
 		NewRunner(&command.Run{ToExec: context.Args()}, configuration).Run(context.Args())
 	}})
 
