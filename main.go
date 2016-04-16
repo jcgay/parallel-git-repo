@@ -31,28 +31,45 @@ func main() {
 }
 
 type Repositories interface {
-	List() []string
+	ListRepositories() []string
 }
 
-type RegisteredRepositories struct {
-	homeDir string
+type Commands interface {
+	ListCommands() map[string]string
 }
 
-func (repos *RegisteredRepositories) List() []string {
-	data, err := ioutil.ReadFile(repos.homeDir + "/.parallel-git-repositories")
+type Configuration struct {
+	content map[interface{}]interface{}
+}
+
+func NewConfiguration(homeDir string) *Configuration {
+	data, err := ioutil.ReadFile(homeDir + "/.parallel-git-repositories")
 	if err != nil {
-		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is correctly set...\n%v", repos.homeDir, err)
+		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is correctly set...\n%v", homeDir, err)
 	}
 
 	config := make(map[interface{}]interface{})
 	if err := yaml.Unmarshal(data, &config); err != nil {
-		log.Fatalf("Configuration file %s/.parallel-git-repositories is not a valid yaml file.\n%v", repos.homeDir, err)
+		log.Fatalf("Configuration file %s/.parallel-git-repositories is not a valid yaml file.\n%v", homeDir, err)
 	}
 
-	all := config["repositories"].([]interface{})
+	return &Configuration{config}
+}
+
+func (config *Configuration) ListRepositories() []string {
+	all := config.content["repositories"].([]interface{})
 	result := make([]string, len(all))
 	for i, repo := range all {
 		result[i] = repo.(string)
+	}
+	return result
+}
+
+func (config *Configuration) ListCommands() map[string]string {
+	all := config.content["commands"].(map[interface{}]interface{})
+	result := make(map[string]string)
+	for key, value := range all {
+		result[key.(string)] = value.(string)
 	}
 	return result
 }
@@ -70,21 +87,17 @@ type Runner struct {
 	writer io.Writer
 }
 
-func NewRunner(command RunnableCommand) *Runner {
-	home, err := homedir.Dir()
-	if err != nil {
-		log.Fatalf("Cannot read user home directory.\n%v", err)
-	}
+func NewRunner(command RunnableCommand, repos Repositories) *Runner {
 	return &Runner{
 		RunnableCommand: command,
-		repos:           &RegisteredRepositories{home},
+		repos:           repos,
 		writer:          os.Stdout,
 	}
 }
 
 func (runner *Runner) Run(args cli.Args) {
 	wg := sync.WaitGroup{}
-	for _, repo := range runner.repos.List() {
+	for _, repo := range runner.repos.ListRepositories() {
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
@@ -123,30 +136,47 @@ func forwardArgs(opts []string, args cli.Args) []string {
 }
 
 func buildCommands() []cli.Command {
-	commands := make([]cli.Command, 1)
+	home, err := homedir.Dir()
+	if err != nil {
+		log.Fatalf("Cannot read user home directory.\n%v", err)
+	}
+	configuration := NewConfiguration(home)
+
+	commands := make([]cli.Command, 0)
 	commands = append(commands, cli.Command{Name: "echo", Action: func(context *cli.Context) {
-		NewRunner(&command.Echo{}).Run(context.Args())
+		NewRunner(&command.Echo{}, configuration).Run(context.Args())
 	},
 	}, cli.Command{Name: "pull", Usage: "Fetch from and integrate with another repository or a local branch", Action: func(context *cli.Context) {
-		NewRunner(&command.GitPull{}).Run(context.Args())
+		NewRunner(&command.GitPull{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "current-branch", Usage: "Get current checkout branch from a repository", Action: func(context *cli.Context) {
-		NewRunner(&command.GitShowCurrentBranch{}).Run(context.Args())
+		NewRunner(&command.GitShowCurrentBranch{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "merge", Usage: "Join two or more development histories together", Action: func(context *cli.Context) {
-		NewRunner(&command.GitMerge{}).Run(context.Args())
+		NewRunner(&command.GitMerge{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "fetch", Usage: "Download objects and refs from another repository and prune", Action: func(context *cli.Context) {
-		NewRunner(&command.GitFetch{}).Run(context.Args())
+		NewRunner(&command.GitFetch{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "status", Usage: "Show the working tree status", Action: func(context *cli.Context) {
-		NewRunner(&command.GitStatus{}).Run(context.Args())
+		NewRunner(&command.GitStatus{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "checkout", Usage: "Switch branches or restore working tree files", Action: func(context *cli.Context) {
-		NewRunner(&command.GitCheckout{}).Run(context.Args())
+		NewRunner(&command.GitCheckout{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "ulg", Usage: "Log commit(s) from tracking branch not present in local branch", Action: func(context *cli.Context) {
-		NewRunner(&command.GitUlg{}).Run(context.Args())
+		NewRunner(&command.GitUlg{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "llg", Usage: "Log unpushed commut(s)", Action: func(context *cli.Context) {
-		NewRunner(&command.GitLlg{}).Run(context.Args())
+		NewRunner(&command.GitLlg{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "merge-abort", Usage: "Abort current merge", Action: func(context *cli.Context) {
-		NewRunner(&command.GitMergeAbort{}).Run(context.Args())
+		NewRunner(&command.GitMergeAbort{}, configuration).Run(context.Args())
 	}}, cli.Command{Name: "run", Usage: "Run an arbitrary command", Action: func(context *cli.Context) {
-		NewRunner(&command.Run{ToExec: context.Args()}).Run(context.Args())
+		NewRunner(&command.Run{ToExec: context.Args()}, configuration).Run(context.Args())
 	}})
+
+	customCommands := configuration.ListCommands()
+	for key, value := range customCommands {
+		commands = append(commands, cli.Command{Name: key, Action: customCommand(value, configuration)})
+	}
 	return commands
+}
+
+func customCommand(execute string, configuration Repositories) func(*cli.Context) {
+	return func(context *cli.Context) {
+		NewRunner(&command.Run{ToExec: strings.Split(execute, " ")}, configuration).Run(context.Args())
+	}
 }

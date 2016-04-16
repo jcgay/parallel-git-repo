@@ -23,7 +23,7 @@ type SingleTempRepository struct {
 	tempDir string
 }
 
-func (this *SingleTempRepository) List() []string {
+func (this *SingleTempRepository) ListRepositories() []string {
 	this.tempDir, _ = ioutil.TempDir("", "parallel-git-repo")
 	return []string{this.tempDir}
 }
@@ -50,7 +50,7 @@ func TestRunCommandWithArguments(t *testing.T) {
 	output := new(bytes.Buffer)
 	repos := &SingleTempRepository{}
 
-	runner := NewRunner(&PrintArgumentsCommand{})
+	runner := NewRunner(&PrintArgumentsCommand{}, repos)
 	runner.writer = output
 	runner.repos = repos
 	runner.Run(cli.Args{"first", "second"})
@@ -77,7 +77,7 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	output := new(bytes.Buffer)
 	repos := &SingleTempRepository{}
 
-	runner := NewRunner(&PrintArgumentsWithIndexCommand{})
+	runner := NewRunner(&PrintArgumentsWithIndexCommand{}, repos)
 	runner.writer = output
 	runner.repos = repos
 	runner.Run(cli.Args{"first", "second", "third", "4", "5", "6", "7", "8", "9", "10"})
@@ -94,12 +94,33 @@ func TestListRepositories(t *testing.T) {
   - /Users/jcgay/dev/maven-color
 `
 	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
-	repos := RegisteredRepositories{dir}
+	repos := NewConfiguration(dir)
 
-	result := repos.List()
+	result := repos.ListRepositories()
 
 	assert := assert.New(t)
 	assert.ThatBool(len(result) == 2).IsTrue()
 	assert.ThatString(result[0]).IsEqualTo("/Users/jcgay/dev/maven-notifier")
 	assert.ThatString(result[1]).IsEqualTo("/Users/jcgay/dev/maven-color")
+}
+
+func TestListCommands(t *testing.T) {
+	dir, _ := ioutil.TempDir("", "ParallelGitReposListCommands")
+	defer os.RemoveAll(dir)
+	config := `
+repositories:
+  - /Users/jcgay/dev/maven-notifier
+commands:
+  pull : git pull
+  current-branch : git symbolic-ref --short HEAD
+`
+	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
+	commands := NewConfiguration(dir)
+
+	result := commands.ListCommands()
+
+	assert := assert.New(t)
+	assert.ThatBool(len(result) == 2).IsTrue()
+	assert.ThatString(result["pull"]).IsEqualTo("git pull")
+	assert.ThatString(result["current-branch"]).IsEqualTo("git symbolic-ref --short HEAD")
 }
