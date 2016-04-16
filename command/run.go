@@ -16,10 +16,13 @@ func (command *Run) Options() []string {
 
 func (command *Run) Output(output string, errOutput string, err error) string {
 	if err != nil {
-		return fmt.Sprintf("%v\n  %s", err, errOutput)
+		if errOutput == "" {
+			return fmt.Sprintf("%s\n  %v", ko, err)
+		}
+		return fmt.Sprintf("%s\n  %v\n  %s", ko, err, errOutput)
 	}
 	if output == "" {
 		return ok
 	}
-	return output
+	return fmt.Sprintf("%s\n  %s", ok, output)
 }
