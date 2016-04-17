@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"github.com/codegangsta/cli"
 	"github.com/jcgay/parallel-git-repo/command"
@@ -21,13 +22,90 @@ import (
 
 var VERSION = "unknown-snapshot"
 
+var (
+	quiet        bool
+	printVersion bool
+)
+
+const help = `NAME:
+  Parallel Git Repositories - Execute commands on multiple Git repositories in parallel!
+
+USAGE:
+  ./parallel-git-repo [global options] command [arguments...]
+
+VERSION:
+  %s
+
+COMMANDS:
+%s
+GLOBAL OPTIONS:
+  -h	show help
+  -v	print the version
+`
+
 func main() {
-	app := cli.NewApp()
-	app.Name = "Parallel Git Repositories"
-	app.Usage = "Execute commands on multiple Git repositories in parallel!"
-	app.Commands = buildCommands()
-	app.Version = VERSION
-	app.Run(os.Args)
+	home, err := homedir.Dir()
+	if err != nil {
+		log.Fatalf("Cannot read user home directory.\n%v", err)
+	}
+	configuration := NewConfiguration(home)
+
+	flag.BoolVar(&quiet, "q", false, "do not print stdout commands result, only stderr will be shown")
+	flag.BoolVar(&printVersion, "v", false, "print current version")
+
+	flag.Usage = func() {
+		fmt.Fprint(os.Stderr, fmt.Sprintf(help, VERSION, listCommands(configuration)))
+		flag.PrintDefaults()
+	}
+
+	flag.Parse()
+
+	if printVersion {
+		fmt.Printf("version: %s", VERSION)
+		os.Exit(0)
+	}
+
+	run(configuration, withoutFlags(os.Args[1:]))
+}
+
+func listCommands(config *Configuration) string {
+	commands := config.ListCommands()
+
+	maxSize := 3
+	for _, value := range commands {
+		if size := len(value); size > maxSize {
+			maxSize = size
+		}
+	}
+
+	result := fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "run", "run an arbitrary command")
+	for key, value := range commands {
+		result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", key, value)
+	}
+
+	return result
+}
+
+func run(config *Configuration, args []string) {
+	commandName := args[0]
+	var toExec []string
+	if commandName == "run" {
+		toExec = args[1:]
+	} else {
+		toExec = strings.Split(config.ListCommands()[commandName], " ")
+	}
+
+	runner := NewRunner(&command.Run{ToExec: toExec, Quiet: quiet}, config)
+	runner.Run(args[1:])
+}
+
+func withoutFlags(args []string) []string {
+	for i, value := range args {
+		if !strings.HasPrefix(value, "-") {
+			return args[i:]
+		}
+	}
+	return args
 }
 
 type Repositories interface {
@@ -133,36 +211,4 @@ func forwardArgs(opts []string, args cli.Args) []string {
 		}
 	}
 	return result
-}
-
-func buildCommands() []cli.Command {
-	home, err := homedir.Dir()
-	if err != nil {
-		log.Fatalf("Cannot read user home directory.\n%v", err)
-	}
-	configuration := NewConfiguration(home)
-
-	quietFlag := []cli.Flag{
-		cli.BoolFlag{
-			Name:  "quiet, q",
-			Usage: "Do not print stdout commands result, only stderr will be shown",
-		},
-	}
-
-	commands := make([]cli.Command, 0)
-	commands = append(commands, cli.Command{Name: "run", Usage: "Run an arbitrary command", Flags: quietFlag, Action: func(context *cli.Context) {
-		NewRunner(&command.Run{ToExec: context.Args(), Quiet: context.Bool("q")}, configuration).Run(context.Args())
-	}})
-
-	customCommands := configuration.ListCommands()
-	for key, value := range customCommands {
-		commands = append(commands, cli.Command{Name: key, Action: customCommand(value, configuration), Flags: quietFlag})
-	}
-	return commands
-}
-
-func customCommand(execute string, configuration Repositories) func(*cli.Context) {
-	return func(context *cli.Context) {
-		NewRunner(&command.Run{ToExec: strings.Split(execute, " "), Quiet: context.Bool("q")}, configuration).Run(context.Args())
-	}
 }
