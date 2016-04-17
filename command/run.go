@@ -4,6 +4,7 @@ import "fmt"
 
 type Run struct {
 	ToExec []string
+	Quiet  bool
 }
 
 func (command *Run) Executable() string {
@@ -21,7 +22,7 @@ func (command *Run) Output(output string, errOutput string, err error) string {
 		}
 		return fmt.Sprintf("%s\n  %v\n  %s", ko, err, errOutput)
 	}
-	if output == "" {
+	if output == "" || command.Quiet {
 		return ok
 	}
 	return fmt.Sprintf("%s\n  %s", ok, output)

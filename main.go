@@ -142,20 +142,27 @@ func buildCommands() []cli.Command {
 	}
 	configuration := NewConfiguration(home)
 
+	quietFlag := []cli.Flag{
+		cli.BoolFlag{
+			Name:  "quiet, q",
+			Usage: "Do not print stdout commands result, only stderr will be shown",
+		},
+	}
+
 	commands := make([]cli.Command, 0)
-	commands = append(commands, cli.Command{Name: "run", Usage: "Run an arbitrary command", Action: func(context *cli.Context) {
-		NewRunner(&command.Run{ToExec: context.Args()}, configuration).Run(context.Args())
+	commands = append(commands, cli.Command{Name: "run", Usage: "Run an arbitrary command", Flags: quietFlag, Action: func(context *cli.Context) {
+		NewRunner(&command.Run{ToExec: context.Args(), Quiet: context.Bool("q")}, configuration).Run(context.Args())
 	}})
 
 	customCommands := configuration.ListCommands()
 	for key, value := range customCommands {
-		commands = append(commands, cli.Command{Name: key, Action: customCommand(value, configuration)})
+		commands = append(commands, cli.Command{Name: key, Action: customCommand(value, configuration), Flags: quietFlag})
 	}
 	return commands
 }
 
 func customCommand(execute string, configuration Repositories) func(*cli.Context) {
 	return func(context *cli.Context) {
-		NewRunner(&command.Run{ToExec: strings.Split(execute, " ")}, configuration).Run(context.Args())
+		NewRunner(&command.Run{ToExec: strings.Split(execute, " "), Quiet: context.Bool("q")}, configuration).Run(context.Args())
 	}
 }
