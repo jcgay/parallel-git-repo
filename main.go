@@ -65,7 +65,15 @@ func main() {
 		os.Exit(0)
 	}
 
-	run(configuration, withoutFlags(os.Args[1:]))
+	if os.Args[1] == "list" {
+		repos := configuration.ListRepositories()
+		for _, repo := range repos {
+			fmt.Println(repo)
+		}
+		os.Exit(0)
+	} else {
+		run(configuration, withoutFlags(os.Args[1:]))
+	}
 }
 
 func listCommands(config *Configuration) string {
@@ -79,6 +87,7 @@ func listCommands(config *Configuration) string {
 	}
 
 	result := fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "run", "run an arbitrary command")
+	result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "list", "list repositories where command will be run")
 	for key, value := range commands {
 		result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", key, value)
 	}
