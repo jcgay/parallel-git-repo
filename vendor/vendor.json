@@ -1,0 +1,57 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "4Onyz+fmtTXoRgQL66r1O+9tf2A=",
+			"path": "github.com/assertgo/assert",
+			"revision": "3806e087583b75bfd4e5808b74afc0248089d257",
+			"revisionTime": "2015-01-06T12:57:17Z"
+		},
+		{
+			"checksumSHA1": "uV+MbPgLKj2KPaAP/2ZUXqbP2vY=",
+			"path": "github.com/codegangsta/cli",
+			"revision": "70e3fa51ebed95df8c0fbe1519c1c1f9bc16bb13",
+			"revisionTime": "2015-10-30T03:11:27Z"
+		},
+		{
+			"checksumSHA1": "gkRIq2AsG0e/ngNfqW+IF/zr9o8=",
+			"path": "github.com/fatih/color",
+			"revision": "4f7bcef27eec7925456d0c30c5e7b0408b3339be",
+			"revisionTime": "2016-02-24T22:11:55Z"
+		},
+		{
+			"checksumSHA1": "rCffFCN6TpDAN3Jylyo8RFzhQ9E=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-colorable",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "4f7bcef27eec7925456d0c30c5e7b0408b3339be",
+			"revisionTime": "2016-02-24T22:11:55Z"
+		},
+		{
+			"checksumSHA1": "NkbetqlpWBi3gP08JDneC+axTKw=",
+			"origin": "github.com/fatih/color/vendor/github.com/mattn/go-isatty",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "4f7bcef27eec7925456d0c30c5e7b0408b3339be",
+			"revisionTime": "2016-02-24T22:11:55Z"
+		},
+		{
+			"checksumSHA1": "Lnv1MZJu56aDzs5/EebdCuq3OFI=",
+			"path": "github.com/mitchellh/go-homedir",
+			"revision": "981ab348d865cf048eb7d17e78ac7192632d8415",
+			"revisionTime": "2016-03-01T18:31:30Z"
+		},
+		{
+			"checksumSHA1": "85cxg2Rd2bSb8OLyjHqCSu2xbVY=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "7a56174f0086b32866ebd746a794417edbc678a1",
+			"revisionTime": "2016-03-02T19:58:15Z"
+		},
+		{
+			"checksumSHA1": "+OgOXBoiQ+X+C2dsAeiOHwBIEH0=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "a83829b6f1293c91addabc89d0571c246397bbf4",
+			"revisionTime": "2016-03-01T20:40:22Z"
+		}
+	],
+	"rootPath": "github.com/jcgay/parallel-git-repo"
+}
