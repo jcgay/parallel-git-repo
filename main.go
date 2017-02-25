@@ -84,8 +84,8 @@ func listCommands(config *Configuration) string {
 	commands := config.ListCommands()
 
 	maxSize := 3
-	for _, value := range commands {
-		if size := len(value); size > maxSize {
+	for key := range commands {
+		if size := len(key); size > maxSize {
 			maxSize = size
 		}
 	}
