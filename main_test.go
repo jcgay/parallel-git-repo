@@ -11,6 +11,9 @@ import (
 )
 
 func ExampleShowVersion() {
+	home, _ = ioutil.TempDir("", "pgr")
+	ioutil.WriteFile(home+"/.parallel-git-repositories", []byte(""), 0644)
+
 	os.Args = []string{"parallel-git-repo", "-v"}
 
 	main()

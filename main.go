@@ -21,6 +21,7 @@ import (
 )
 
 var VERSION = "unknown-snapshot"
+var home string
 
 var (
 	quiet        bool
@@ -44,9 +45,12 @@ GLOBAL OPTIONS:
 `
 
 func main() {
-	home, err := homedir.Dir()
-	if err != nil {
-		log.Fatalf("Cannot read user home directory.\n%v", err)
+	if home == "" {
+		var err error
+		home, err = homedir.Dir()
+		if err != nil {
+			log.Fatalf("Cannot read user home directory.\n%v", err)
+		}
 	}
 	configuration := NewConfiguration(home)
 
