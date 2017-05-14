@@ -92,9 +92,12 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 func TestListRepositories(t *testing.T) {
 	dir, _ := ioutil.TempDir("", "ParallelGitReposListRepositories")
 	defer os.RemoveAll(dir)
-	config := `repositories:
-  - /Users/jcgay/dev/maven-notifier
-  - /Users/jcgay/dev/maven-color
+	config := `
+[repositories]
+  default = [
+    "/Users/jcgay/dev/maven-notifier",
+    "/Users/jcgay/dev/maven-color"
+  ]
 `
 	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
 	repos := NewConfiguration(dir)
@@ -111,11 +114,13 @@ func TestListCommands(t *testing.T) {
 	dir, _ := ioutil.TempDir("", "ParallelGitReposListCommands")
 	defer os.RemoveAll(dir)
 	config := `
-repositories:
-  - /Users/jcgay/dev/maven-notifier
-commands:
-  pull : git pull
-  current-branch : git symbolic-ref --short HEAD
+[repositories]
+  default = [
+    "/Users/jcgay/dev/maven-notifier"
+  ]
+[commands]
+  pull = "git pull"
+  current-branch = "git symbolic-ref --short HEAD"
 `
 	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
 	commands := NewConfiguration(dir)

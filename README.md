@@ -12,29 +12,31 @@ Run command on git repositories in parallel.
 
 Configure the repositories list where command will be run in `$HOME/.parallel-git-repositories`:
 
-```yaml
-repositories:
-  - /Users/jcgay/dev/maven-notifier
-  - /Users/jcgay/dev/maven-color
+```
+[repositories]
+  default = [
+    "/Users/jcgay/dev/maven-notifier",
+    "/Users/jcgay/dev/maven-color"
+  ]
 ```
 
 Also define commands that you want to run on these repositories:
 
-```yaml
-commands:
-  fetch : git fetch -p
-  status : git status
-  pull : git pull
-  push : git push $@
-  checkout : git checkout $@
-  current-branch : git rev-parse --abbrev-ref HEAD
-  merge : git merge --log --no-ff $@
-  set-version : mvn versions:set -DnewVersion=$1
-  ismerged : git branch --list $1 -r --merged
-  contains : git branch -r --contains $1
+```
+[commands]
+  fetch = "git fetch -p"
+  status = "git status"
+  pull = "git pull"
+  push = "git push $@"
+  checkout = "git checkout $@"
+  current-branch = "git rev-parse --abbrev-ref HEAD"
+  merge = "git merge --log --no-ff $@"
+  set-version = "mvn versions:set -DnewVersion=$1"
+  ismerged = "git branch --list $1 -r --merged"
+  contains = "git branch -r --contains $1"
 ```
 
-This is a [`YAML`](http://www.yaml.org) file.
+This is a [`TOML`](https://github.com/toml-lang/toml) file.
 
 List available commands:
 

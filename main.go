@@ -7,9 +7,8 @@ import (
 	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
-	"gopkg.in/yaml.v2"
+	"github.com/pelletier/go-toml"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -133,37 +132,31 @@ type Commands interface {
 }
 
 type Configuration struct {
-	content map[interface{}]interface{}
+	content *toml.Tree
 }
 
 func NewConfiguration(homeDir string) *Configuration {
-	data, err := ioutil.ReadFile(homeDir + "/.parallel-git-repositories")
+	config, err := toml.LoadFile(homeDir + "/.parallel-git-repositories")
 	if err != nil {
-		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is correctly set...\n%v", homeDir, err)
+		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is valid...\n%v", homeDir, err)
 	}
-
-	config := make(map[interface{}]interface{})
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		log.Fatalf("Configuration file %s/.parallel-git-repositories is not a valid yaml file.\n%v", homeDir, err)
-	}
-
 	return &Configuration{config}
 }
 
 func (config *Configuration) ListRepositories() []string {
-	all := config.content["repositories"].([]interface{})
-	result := make([]string, len(all))
-	for i, repo := range all {
+	repos := config.content.Get("repositories.default").([]interface{})
+	result := make([]string, len(repos))
+	for i, repo := range repos {
 		result[i] = repo.(string)
 	}
 	return result
 }
 
 func (config *Configuration) ListCommands() map[string]string {
-	all := config.content["commands"].(map[interface{}]interface{})
+	all := config.content.Get("commands").(*toml.Tree)
 	result := make(map[string]string)
-	for key, value := range all {
-		result[key.(string)] = value.(string)
+	for _, key := range all.Keys() {
+		result[key] = all.Get(key).(string)
 	}
 	return result
 }
