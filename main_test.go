@@ -45,7 +45,7 @@ func (command *PrintArgumentsCommand) Options() []string {
 	return []string{"$@"}
 }
 
-func (command *PrintArgumentsCommand) Output(output string, errOutput string, err error) string {
+func (command *PrintArgumentsCommand) Output(output string, err error) string {
 	return output
 }
 
@@ -72,7 +72,7 @@ func (command *PrintArgumentsWithIndexCommand) Options() []string {
 	return []string{"$1", "path/$10", "option=$3", "$4-$7"}
 }
 
-func (command *PrintArgumentsWithIndexCommand) Output(output string, errOutput string, err error) string {
+func (command *PrintArgumentsWithIndexCommand) Output(output string, err error) string {
 	return output
 }
 

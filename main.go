@@ -168,7 +168,7 @@ func (config *Configuration) ListCommands() map[string]string {
 type RunnableCommand interface {
 	Executable() string
 	Options() []string
-	Output(output string, errOutput string, err error) string
+	Output(output string, err error) string
 }
 
 type Runner struct {
@@ -193,15 +193,14 @@ func (runner *Runner) Run(args cli.Args) {
 		go func(repo string) {
 			defer wg.Done()
 			output := new(bytes.Buffer)
-			errorOutput := new(bytes.Buffer)
 
 			command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
 			command.Stdout = output
-			command.Stderr = errorOutput
+			command.Stderr = output
 			command.Dir = repo
 			err := command.Run()
 
-			fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), strings.TrimSpace(errorOutput.String()), err))
+			fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), err))
 		}(repo)
 	}
 	wg.Wait()

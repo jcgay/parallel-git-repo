@@ -15,12 +15,12 @@ func (command *Run) Options() []string {
 	return command.ToExec[1:]
 }
 
-func (command *Run) Output(output string, errOutput string, err error) string {
+func (command *Run) Output(output string, err error) string {
 	if err != nil {
-		if errOutput == "" {
+		if output == "" {
 			return fmt.Sprintf("%s\n  %v", ko, err)
 		}
-		return fmt.Sprintf("%s\n  %v\n  %s", ko, err, errOutput)
+		return fmt.Sprintf("%s\n  %v\n  %s", ko, err, output)
 	}
 	if output == "" || command.Quiet {
 		return ok
