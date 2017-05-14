@@ -5,7 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/codegangsta/cli"
-	"github.com/jcgay/parallel-git-repo/command"
+	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"gopkg.in/yaml.v2"
 	"io"
@@ -43,6 +43,9 @@ GLOBAL OPTIONS:
   -h	show help
   -v	print the version
 `
+
+var ok = color.New(color.FgGreen).SprintFunc()("✔")
+var ko = color.New(color.FgRed).SprintFunc()("✘")
 
 func main() {
 	if home == "" {
@@ -108,7 +111,7 @@ func run(config *Configuration, args []string) {
 		toExec = strings.Split(config.ListCommands()[commandName], " ")
 	}
 
-	runner := NewRunner(&command.Run{ToExec: toExec, Quiet: quiet}, config)
+	runner := NewRunner(&Run{ToExec: toExec, Quiet: quiet}, config)
 	runner.Run(args[1:])
 }
 
@@ -223,4 +226,30 @@ func forwardArgs(opts []string, args cli.Args) []string {
 		}
 	}
 	return result
+}
+
+type Run struct {
+	ToExec []string
+	Quiet  bool
+}
+
+func (command *Run) Executable() string {
+	return command.ToExec[0]
+}
+
+func (command *Run) Options() []string {
+	return command.ToExec[1:]
+}
+
+func (command *Run) Output(output string, err error) string {
+	if err != nil {
+		if output == "" {
+			return fmt.Sprintf("%s\n  %v", ko, err)
+		}
+		return fmt.Sprintf("%s\n  %v\n  %s", ko, err, output)
+	}
+	if output == "" || command.Quiet {
+		return ok
+	}
+	return fmt.Sprintf("%s\n  %s", ok, output)
 }
