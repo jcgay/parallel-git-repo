@@ -56,7 +56,7 @@ func TestRunCommandWithArguments(t *testing.T) {
 	runner := NewRunner(&PrintArgumentsCommand{}, repos)
 	runner.writer = output
 	runner.repos = repos
-	runner.Run(cli.Args{"first", "second"})
+	runner.Run(cli.Args{"first", "second"}, "default")
 
 	assert := assert.New(t)
 	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first second\n")
@@ -83,7 +83,7 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	runner := NewRunner(&PrintArgumentsWithIndexCommand{}, repos)
 	runner.writer = output
 	runner.repos = repos
-	runner.Run(cli.Args{"first", "second", "third", "4", "5", "6", "7", "8", "9", "10"})
+	runner.Run(cli.Args{"first", "second", "third", "4", "5", "6", "7", "8", "9", "10"}, "default")
 
 	assert := assert.New(t)
 	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first path/10 option=third 4-7\n")
