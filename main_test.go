@@ -26,9 +26,9 @@ type SingleTempRepository struct {
 	tempDir string
 }
 
-func (this *SingleTempRepository) ListRepositories() []string {
+func (this *SingleTempRepository) ListRepositories() map[string][]string {
 	this.tempDir, _ = ioutil.TempDir("", "parallel-git-repo")
-	return []string{this.tempDir}
+	return map[string][]string{"default": []string{this.tempDir}}
 }
 
 func (this *SingleTempRepository) Dir() string {
@@ -98,6 +98,10 @@ func TestListRepositories(t *testing.T) {
     "/Users/jcgay/dev/maven-notifier",
     "/Users/jcgay/dev/maven-color"
   ]
+  others = [
+    "/Users/jcgay/dev/gradle-notifier",
+    "/Users/jcgay/dev/buildplan-maven-plugin",
+  ]
 `
 	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
 	repos := NewConfiguration(dir)
@@ -106,8 +110,10 @@ func TestListRepositories(t *testing.T) {
 
 	assert := assert.New(t)
 	assert.ThatBool(len(result) == 2).IsTrue()
-	assert.ThatString(result[0]).IsEqualTo("/Users/jcgay/dev/maven-notifier")
-	assert.ThatString(result[1]).IsEqualTo("/Users/jcgay/dev/maven-color")
+	assert.ThatString(result["default"][0]).IsEqualTo("/Users/jcgay/dev/maven-notifier")
+	assert.ThatString(result["default"][1]).IsEqualTo("/Users/jcgay/dev/maven-color")
+	assert.ThatString(result["others"][0]).IsEqualTo("/Users/jcgay/dev/gradle-notifier")
+	assert.ThatString(result["others"][1]).IsEqualTo("/Users/jcgay/dev/buildplan-maven-plugin")
 }
 
 func TestListCommands(t *testing.T) {

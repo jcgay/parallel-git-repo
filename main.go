@@ -73,8 +73,11 @@ func main() {
 
 	if os.Args[1] == "list" {
 		repos := configuration.ListRepositories()
-		for _, repo := range repos {
-			fmt.Println(repo)
+		for key, repos := range repos {
+			fmt.Printf("%s:\n", key)
+			for _, repo := range repos {
+				fmt.Printf("  - %s\n", repo)
+			}
 		}
 		os.Exit(0)
 	} else {
@@ -124,7 +127,7 @@ func withoutFlags(args []string) []string {
 }
 
 type Repositories interface {
-	ListRepositories() []string
+	ListRepositories() map[string][]string
 }
 
 type Commands interface {
@@ -143,11 +146,19 @@ func NewConfiguration(homeDir string) *Configuration {
 	return &Configuration{config}
 }
 
-func (config *Configuration) ListRepositories() []string {
-	repos := config.content.Get("repositories.default").([]interface{})
-	result := make([]string, len(repos))
-	for i, repo := range repos {
-		result[i] = repo.(string)
+func (config *Configuration) ListRepositories() map[string][]string {
+	repos := config.content.Get("repositories").(*toml.Tree)
+	result := make(map[string][]string)
+	for _, key := range repos.Keys() {
+		result[key] = toStringArray(repos.Get(key).([]interface{}))
+	}
+	return result
+}
+
+func toStringArray(values []interface{}) []string {
+	result := make([]string, len(values))
+	for i, value := range values {
+		result[i] = value.(string)
 	}
 	return result
 }
@@ -184,20 +195,22 @@ func NewRunner(command RunnableCommand, repos Repositories) *Runner {
 
 func (runner *Runner) Run(args cli.Args) {
 	wg := sync.WaitGroup{}
-	for _, repo := range runner.repos.ListRepositories() {
-		wg.Add(1)
-		go func(repo string) {
-			defer wg.Done()
-			output := new(bytes.Buffer)
+	for _, repos := range runner.repos.ListRepositories() {
+		for _, repo := range repos {
+			wg.Add(1)
+			go func(repo string) {
+				defer wg.Done()
+				output := new(bytes.Buffer)
 
-			command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
-			command.Stdout = output
-			command.Stderr = output
-			command.Dir = repo
-			err := command.Run()
+				command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
+				command.Stdout = output
+				command.Stderr = output
+				command.Dir = repo
+				err := command.Run()
 
-			fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), err))
-		}(repo)
+				fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), err))
+			}(repo)
+		}
 	}
 	wg.Wait()
 }
