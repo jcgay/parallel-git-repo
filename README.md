@@ -8,7 +8,7 @@ Run command on git repositories in parallel.
 
     go install
 
-## Usage
+## Configuration
 
 Configure the repositories list where command will be run in `$HOME/.parallel-git-repositories`:
 
@@ -17,6 +17,22 @@ Configure the repositories list where command will be run in `$HOME/.parallel-gi
   default = [
     "/Users/jcgay/dev/maven-notifier",
     "/Users/jcgay/dev/maven-color"
+  ]
+```
+
+The group `default` is mandatory.
+
+You can create groups of repositories to separate them by concern:
+
+```
+[repositories]
+  default = [
+    "/Users/jcgay/dev/maven-color",
+    "/Users/jcgay/dev/buildplan-maven-plugin"
+  ]
+  notifier = [
+    "/Users/jcgay/dev/maven-notifier",
+    "/Users/jcgay/dev/gradle-notifier"
   ]
 ```
 
@@ -38,7 +54,9 @@ Also define commands that you want to run on these repositories:
 
 This is a [`TOML`](https://github.com/toml-lang/toml) file.
 
-List available commands:
+## Usage
+
+### List available commands:
 
     parallel-git-repo -h
 
@@ -49,6 +67,14 @@ Example when running `pull` command:
 maven-color: ✔
 maven-notifier: ✔
 ```
+
+### Run an arbitrary command:
+
+    parallel-git-repo run git remote -v
+
+### Run command for a specific group
+
+    parallel-git-repo -g=notifier status
 
 ## Build
 
