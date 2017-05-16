@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/codegangsta/cli"
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pelletier/go-toml"
@@ -196,7 +195,7 @@ func NewRunner(command RunnableCommand, repos Repositories) *Runner {
 	}
 }
 
-func (runner *Runner) Run(args cli.Args, group string) {
+func (runner *Runner) Run(args []string, group string) {
 	wg := sync.WaitGroup{}
 	for key, repos := range runner.repos.ListRepositories() {
 		if key == group {
@@ -222,7 +221,7 @@ func (runner *Runner) Run(args cli.Args, group string) {
 
 var option = regexp.MustCompile(`\$([0-9]+)`)
 
-func forwardArgs(opts []string, args cli.Args) []string {
+func forwardArgs(opts []string, args []string) []string {
 	result := make([]string, 0)
 	for _, opt := range opts {
 		if opt == "$@" {

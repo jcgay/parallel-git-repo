@@ -9,12 +9,6 @@
 			"revisionTime": "2015-01-06T12:57:17Z"
 		},
 		{
-			"checksumSHA1": "uV+MbPgLKj2KPaAP/2ZUXqbP2vY=",
-			"path": "github.com/codegangsta/cli",
-			"revision": "70e3fa51ebed95df8c0fbe1519c1c1f9bc16bb13",
-			"revisionTime": "2015-10-30T03:11:27Z"
-		},
-		{
 			"checksumSHA1": "gkRIq2AsG0e/ngNfqW+IF/zr9o8=",
 			"path": "github.com/fatih/color",
 			"revision": "4f7bcef27eec7925456d0c30c5e7b0408b3339be",
