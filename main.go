@@ -71,10 +71,7 @@ func main() {
 
 	if printVersion {
 		fmt.Printf("version: %s", VERSION)
-		os.Exit(0)
-	}
-
-	if os.Args[1] == "list" {
+	} else if os.Args[1] == "list" {
 		repos := configuration.ListRepositories()
 		for key, repos := range repos {
 			fmt.Printf("%s:\n", key)
@@ -82,7 +79,6 @@ func main() {
 				fmt.Printf("  - %s\n", repo)
 			}
 		}
-		os.Exit(0)
 	} else {
 		runCommand(configuration, withoutFlags(os.Args[1:]), group)
 	}
