@@ -81,6 +81,7 @@ maven-notifier: ✔
 ### Status
 
 [![Build Status](https://travis-ci.org/jcgay/parallel-git-repo.svg?branch=master)](https://travis-ci.org/jcgay/parallel-git-repo)
+[![Code Report](https://goreportcard.com/badge/github.com/jcgay/parallel-git-repo)](https://goreportcard.com/report/github.com/jcgay/parallel-git-repo)
 
 ### Release
 

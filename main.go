@@ -18,6 +18,7 @@ import (
 	"sync"
 )
 
+// VERSION injected at compile time by goxc (see https://github.com/laher/goxc/wiki/versioning#version-number-interpolation)
 var VERSION = "unknown-snapshot"
 var home string
 
@@ -53,7 +54,7 @@ func main() {
 			log.Fatalf("Cannot read user home directory.\n%v", err)
 		}
 	}
-	configuration := NewConfiguration(home)
+	configuration := newConfiguration(home)
 
 	flag.BoolVar(&quiet, "q", false, "do not print stdout commands result, only stderr will be shown")
 	flag.BoolVar(&printVersion, "v", false, "print current version")
@@ -83,11 +84,11 @@ func main() {
 		}
 		os.Exit(0)
 	} else {
-		run(configuration, withoutFlags(os.Args[1:]), group)
+		runCommand(configuration, withoutFlags(os.Args[1:]), group)
 	}
 }
 
-func listCommands(config *Configuration) string {
+func listCommands(config *configuration) string {
 	commands := config.ListCommands()
 
 	maxSize := 3
@@ -106,7 +107,7 @@ func listCommands(config *Configuration) string {
 	return result
 }
 
-func run(config *Configuration, args []string, group string) {
+func runCommand(config *configuration, args []string, group string) {
 	commandName := args[0]
 	var toExec []string
 	if commandName == "run" {
@@ -115,7 +116,7 @@ func run(config *Configuration, args []string, group string) {
 		toExec = strings.Split(config.ListCommands()[commandName], " ")
 	}
 
-	runner := NewRunner(&Run{ToExec: toExec, Quiet: quiet}, config)
+	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
 	runner.Run(args[1:], group)
 }
 
@@ -128,27 +129,27 @@ func withoutFlags(args []string) []string {
 	return args
 }
 
-type Repositories interface {
+type repositories interface {
 	ListRepositories() map[string][]string
 }
 
-type Commands interface {
+type commands interface {
 	ListCommands() map[string]string
 }
 
-type Configuration struct {
+type configuration struct {
 	content *toml.Tree
 }
 
-func NewConfiguration(homeDir string) *Configuration {
+func newConfiguration(homeDir string) *configuration {
 	config, err := toml.LoadFile(homeDir + "/.parallel-git-repositories")
 	if err != nil {
 		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is valid...\n%v", homeDir, err)
 	}
-	return &Configuration{config}
+	return &configuration{config}
 }
 
-func (config *Configuration) ListRepositories() map[string][]string {
+func (config *configuration) ListRepositories() map[string][]string {
 	repos := config.content.Get("repositories").(*toml.Tree)
 	result := make(map[string][]string)
 	for _, key := range repos.Keys() {
@@ -165,7 +166,7 @@ func toStringArray(values []interface{}) []string {
 	return result
 }
 
-func (config *Configuration) ListCommands() map[string]string {
+func (config *configuration) ListCommands() map[string]string {
 	all := config.content.Get("commands").(*toml.Tree)
 	result := make(map[string]string)
 	for _, key := range all.Keys() {
@@ -174,28 +175,28 @@ func (config *Configuration) ListCommands() map[string]string {
 	return result
 }
 
-type RunnableCommand interface {
+type runnableCommand interface {
 	Executable() string
 	Options() []string
 	Output(output string, err error) string
 }
 
-type Runner struct {
-	RunnableCommand
+type runner struct {
+	runnableCommand
 
-	repos  Repositories
+	repos  repositories
 	writer io.Writer
 }
 
-func NewRunner(command RunnableCommand, repos Repositories) *Runner {
-	return &Runner{
-		RunnableCommand: command,
+func newRunner(command runnableCommand, repos repositories) *runner {
+	return &runner{
+		runnableCommand: command,
 		repos:           repos,
 		writer:          os.Stdout,
 	}
 }
 
-func (runner *Runner) Run(args []string, group string) {
+func (runner *runner) Run(args []string, group string) {
 	wg := sync.WaitGroup{}
 	for key, repos := range runner.repos.ListRepositories() {
 		if key == group {
@@ -205,13 +206,13 @@ func (runner *Runner) Run(args []string, group string) {
 					defer wg.Done()
 					output := new(bytes.Buffer)
 
-					command := exec.Command(runner.RunnableCommand.Executable(), forwardArgs(runner.RunnableCommand.Options(), args)...)
+					command := exec.Command(runner.runnableCommand.Executable(), forwardArgs(runner.runnableCommand.Options(), args)...)
 					command.Stdout = output
 					command.Stderr = output
 					command.Dir = repo
 					err := command.Run()
 
-					fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.RunnableCommand.Output(strings.TrimSpace(output.String()), err))
+					fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output(strings.TrimSpace(output.String()), err))
 				}(repo)
 			}
 		}
@@ -238,20 +239,20 @@ func forwardArgs(opts []string, args []string) []string {
 	return result
 }
 
-type Run struct {
+type run struct {
 	ToExec []string
 	Quiet  bool
 }
 
-func (command *Run) Executable() string {
+func (command *run) Executable() string {
 	return command.ToExec[0]
 }
 
-func (command *Run) Options() []string {
+func (command *run) Options() []string {
 	return command.ToExec[1:]
 }
 
-func (command *Run) Output(output string, err error) string {
+func (command *run) Output(output string, err error) string {
 	if err != nil {
 		if output == "" {
 			return fmt.Sprintf("%s\n  %v", ko, err)

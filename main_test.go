@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func ExampleShowVersion() {
+func Example() {
 	home, _ = ioutil.TempDir("", "pgr")
 	ioutil.WriteFile(home+"/.parallel-git-repositories", []byte(""), 0644)
 
@@ -25,13 +25,13 @@ type SingleTempRepository struct {
 	tempDir string
 }
 
-func (this *SingleTempRepository) ListRepositories() map[string][]string {
-	this.tempDir, _ = ioutil.TempDir("", "parallel-git-repo")
-	return map[string][]string{"default": []string{this.tempDir}}
+func (config *SingleTempRepository) ListRepositories() map[string][]string {
+	config.tempDir, _ = ioutil.TempDir("", "parallel-git-repo")
+	return map[string][]string{"default": {config.tempDir}}
 }
 
-func (this *SingleTempRepository) Dir() string {
-	return filepath.Base(this.tempDir)
+func (config *SingleTempRepository) Dir() string {
+	return filepath.Base(config.tempDir)
 }
 
 type PrintArgumentsCommand struct{}
@@ -52,7 +52,7 @@ func TestRunCommandWithArguments(t *testing.T) {
 	output := new(bytes.Buffer)
 	repos := &SingleTempRepository{}
 
-	runner := NewRunner(&PrintArgumentsCommand{}, repos)
+	runner := newRunner(&PrintArgumentsCommand{}, repos)
 	runner.writer = output
 	runner.repos = repos
 	runner.Run([]string{"first", "second"}, "default")
@@ -79,7 +79,7 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	output := new(bytes.Buffer)
 	repos := &SingleTempRepository{}
 
-	runner := NewRunner(&PrintArgumentsWithIndexCommand{}, repos)
+	runner := newRunner(&PrintArgumentsWithIndexCommand{}, repos)
 	runner.writer = output
 	runner.repos = repos
 	runner.Run([]string{"first", "second", "third", "4", "5", "6", "7", "8", "9", "10"}, "default")
@@ -103,7 +103,7 @@ func TestListRepositories(t *testing.T) {
   ]
 `
 	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
-	repos := NewConfiguration(dir)
+	repos := newConfiguration(dir)
 
 	result := repos.ListRepositories()
 
@@ -128,7 +128,7 @@ func TestListCommands(t *testing.T) {
   current-branch = "git symbolic-ref --short HEAD"
 `
 	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
-	commands := NewConfiguration(dir)
+	commands := newConfiguration(dir)
 
 	result := commands.ListCommands()
 
