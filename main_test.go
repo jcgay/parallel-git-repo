@@ -18,7 +18,7 @@ func Example() {
 	main()
 
 	// Output:
-	// version: unknown-snapshot
+	// version: unknown-snapshot (unknown-commit)
 }
 
 type SingleTempRepository struct {

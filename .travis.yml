@@ -1,8 +1,32 @@
 language: go
 sudo: false
 go:
-  - tip
+  - 1.8.x
 before_install:
   - go get github.com/mattn/goveralls
 script:
   - $HOME/gopath/bin/goveralls -service=travis-ci
+  - make all release
+before_deploy:
+  - make prepare-bintray
+deploy:
+  - provider: releases
+    api_key:
+      secure: Oom3MCaI+y3UWCe44rewz3mtqJ19CDapW4txDmcmijedrrmY8X8q4QefgUONIlXj40uyhOmsLFUHcxCOPzQ/cxpEHh5rpr1hQZodAIM7bdhh6PxfjF9b2P5ZtFJjI5EkRqxTxmNX1lNYMHI4OAN+TE0ui7A0EPGFVHuJtGZUV5dZc7EBhLxNkBppNYIq2ZYoKitCETDC3+EPZi3+QRSKNHbmIeJtDT3dTHzMdJA18ExbxHc37wjuZhUJlZAWR6HnbDWykl5fUVHA8rPEYSwl8C34ANxfXjSOP+woO4jJOhllHdHW/XpbN4xC2OBGOK6zn/LR8nmCZ/lRit9o8G9ZQ7rJALOL+IDDyblt2STB9vzFosIObYSQPPflzDeT1zeDPeZbHkzZNPF89MS3cJRVW9BXWoHEQdS6AWYHzXLE+VdnFLyzhKtlC0HKoA+/20pbFkIsn4SGJMXULlr7jSmBVgmHuVO/6q5fBp/70EjZShO/gzhvdl2oMzhi42RNMLUJzsPJuzDODVTR+QEwqxsk5SWdBWj4pBphbl3A+7Yygzwub++mdrxe0oVHtvSpj8xYAPSPU7V7AGWHPCKxyXK84Lyil0x3fpzGMe7SLd1MNWaGp5iTtkOD6K7H/RPSfugy0CgjoxGxj3SNkllr/n4imc6spNKXOB5Rh7PAj9D+hXw=
+    go: 1.8.x
+    file_glob: true
+    file: cross/*
+    skip_cleanup: true
+    on:
+      repo: jcgay/parallel-git-repo
+      tags: true
+  - provider: bintray
+    user: jcgay
+    key:
+      secure: obUD+i5GcosTbTld+EDF/2dzOnNV1uYDOC8UTnsyZsAmFRJCUfzCK3A4AiUYXlhf7InA/YlnCcIYrPceY74O6GSPoYldV/m77wOmFO91e4LdwnOzSK/GjXIQpY58/uIe1nmqX5A8AbRNI0CPsRXKiwL3huSLOZbKSb6ls8W4Vi9N/MeqZAKPQtIvAxzjhh8Tt729cddEVk0Ym9BomDaSLRxNRAEBCjuRWyiqz2rA2DdKWSCswBCGa3FPC6L8yffY6ylJS0O6IQBsYrTOzuAJNM6byP7HE8b98v28ZMCBrQ8g39IYtF497A59KjVwCmAcUep4CNPkNsx0i+4YZx3WjGjsvbAArgHymdln3+ENDiAaBnOiQz2F3iSm/JVhtUxb2C0hDzNEoUhbOCLr0cdWOXLFjFyGE444CZgd6vOvh/nX8yYqhOeIyycv5ovOb+gd2QqmA85ZwBUzPx9FHgJWOvEueU/NZQN9zFpvYMLtAy/cLiijZR1DXH3Y56q/BrX5rUrbR/NxjUelyO71zRRGU5j7p4KWY8Rvk4eX653AZqFNXIC+JIK2CbN3K6l8I5AS3zG0scwkuP1+pZo0RSY83OliquyDZnkJB1BmqbYGkNCZs95/GrMh2E6ZkwPw8x/8gIyS+es+WebN7JI36r5/eOCKZWJZBCYiUclUmYfSkpw=
+    go: 1.8.x
+    file: bintray/descriptor.json
+    skip_cleanup: true
+    on:
+      repo: jcgay/parallel-git-repo
+      tags: true

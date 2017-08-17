@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/jcgay/parallel-git-repo/version"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pelletier/go-toml"
 	"io"
@@ -18,8 +19,6 @@ import (
 	"sync"
 )
 
-// VERSION injected at compile time by goxc (see https://github.com/laher/goxc/wiki/versioning#version-number-interpolation)
-var VERSION = "unknown-snapshot"
 var home string
 
 var (
@@ -34,7 +33,7 @@ USAGE:
   ./parallel-git-repo [global options] command [arguments...]
 
 VERSION:
-  %s
+  %s (%s)
 
 COMMANDS:
 %s
@@ -63,14 +62,14 @@ func main() {
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
 
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(help, VERSION, listCommands(configuration)))
+		fmt.Fprint(os.Stderr, fmt.Sprintf(help, version.VERSION, version.GITCOMMIT, listCommands(configuration)))
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
 
 	if printVersion {
-		fmt.Printf("version: %s", VERSION)
+		fmt.Printf("version: %s (%s)", version.VERSION, version.GITCOMMIT)
 	} else if os.Args[1] == "list" {
 		repos := configuration.ListRepositories()
 		for key, repos := range repos {

@@ -43,5 +43,5 @@ _testmain.go
 *.test
 *.prof
 
-# goxc
-.goxc.local.json
+# Cross Platform builds
+cross/
