@@ -4,9 +4,15 @@ Run command on git repositories in parallel.
 
 ## Installation
 
-### From source, clone the repository, then
+### Binaries
 
-    go install
+ - [macOS (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-darwin-amd64)
+ - Linux: [32 bits](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-linux-386) / [64 bits](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-linux-amd64)
+ - [Windows (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-windows-amd64)
+
+### Go style
+
+    go get github.com/jcgay/parallel-git-repo
 
 ## Configuration
 
@@ -63,7 +69,7 @@ This is a [`TOML`](https://github.com/toml-lang/toml) file.
 Example when running `pull` command:
 
 ```
-> parallel-git-repo pull
+$> parallel-git-repo pull
 maven-color: ✔
 maven-notifier: ✔
 ```
