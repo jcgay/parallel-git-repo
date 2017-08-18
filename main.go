@@ -52,7 +52,6 @@ func main() {
 			log.Fatalf("Cannot read user home directory.\n%v", err)
 		}
 	}
-	configuration := newConfiguration(home)
 
 	flag.BoolVar(&quiet, "q", false, "do not print stdout commands result, only stderr will be shown")
 	flag.BoolVar(&printVersion, "v", false, "print current version")
@@ -61,7 +60,7 @@ func main() {
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
 
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(help, version.VERSION, version.GITCOMMIT, listCommands(configuration)))
+		fmt.Fprint(os.Stderr, fmt.Sprintf(help, version.VERSION, version.GITCOMMIT, listCommands()))
 		flag.PrintDefaults()
 	}
 
@@ -69,21 +68,28 @@ func main() {
 
 	if printVersion {
 		fmt.Printf("version: %s (%s)", version.VERSION, version.GITCOMMIT)
-	} else if os.Args[1] == "list" {
-		repos := configuration.ListRepositories()
-		for key, repos := range repos {
-			fmt.Printf("%s:\n", key)
-			for _, repo := range repos {
-				fmt.Printf("  - %s\n", repo)
-			}
-		}
 	} else {
-		runCommand(configuration, withoutFlags(os.Args[1:]), group)
+		configuration := newConfiguration(home)
+		if os.Args[1] == "list" {
+			repos := configuration.ListRepositories()
+			for key, repos := range repos {
+				fmt.Printf("%s:\n", key)
+				for _, repo := range repos {
+					fmt.Printf("  - %s\n", repo)
+				}
+			}
+		} else {
+			runCommand(configuration, withoutFlags(os.Args[1:]), group)
+		}
 	}
 }
 
-func listCommands(config *configuration) string {
-	commands := config.ListCommands()
+func listCommands() string {
+	config, err := tryNewConfiguration(home)
+	commands := make(map[string]string)
+	if err == nil {
+		commands = config.ListCommands()
+	}
 
 	maxSize := 3
 	for key := range commands {
@@ -136,11 +142,19 @@ type configuration struct {
 }
 
 func newConfiguration(homeDir string) *configuration {
-	config, err := toml.LoadFile(homeDir + "/.parallel-git-repositories")
+	config, err := tryNewConfiguration(homeDir)
 	if err != nil {
 		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is valid...\n%v", homeDir, err)
 	}
-	return &configuration{config}
+	return config
+}
+
+func tryNewConfiguration(homeDir string) (*configuration, error) {
+	config, err := toml.LoadFile(homeDir + "/.parallel-git-repositories")
+	if err != nil {
+		return nil, err
+	}
+	return &configuration{config}, nil
 }
 
 func (config *configuration) ListRepositories() map[string][]string {
