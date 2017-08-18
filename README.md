@@ -6,9 +6,9 @@ Run command on git repositories in parallel.
 
 ### Binaries
 
- - [macOS (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-darwin-amd64)
- - Linux: [32 bits](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-linux-386) / [64 bits](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-linux-amd64)
- - [Windows (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=parallel-git-repo-windows-amd64)
+ - [macOS (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-darwin-amd64)
+ - Linux: [32 bits](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-linux-386) / [64 bits](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-linux-amd64)
+ - [Windows (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-windows-amd64)
 
 ### Go style
 
