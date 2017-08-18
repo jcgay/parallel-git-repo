@@ -39,7 +39,6 @@ COMMANDS:
 %s
 GLOBAL OPTIONS:
   -h	show help
-  -v	print the version
 `
 
 var ok = color.New(color.FgGreen).SprintFunc()("✔")
