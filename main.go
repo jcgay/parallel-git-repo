@@ -24,6 +24,7 @@ var home string
 var (
 	quiet        bool
 	printVersion bool
+	allGroups    bool
 )
 
 const help = `NAME:
@@ -58,6 +59,7 @@ func main() {
 
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
+	flag.BoolVar(&allGroups, "all-groups", false, "execute command for all repositories groups")
 
 	flag.Usage = func() {
 		fmt.Fprint(os.Stderr, fmt.Sprintf(help, version.VERSION, version.GITCOMMIT, listCommands()))
@@ -207,7 +209,7 @@ func newRunner(command runnableCommand, repos repositories) *runner {
 func (runner *runner) Run(args []string, group string) {
 	wg := sync.WaitGroup{}
 	for key, repos := range runner.repos.ListRepositories() {
-		if key == group {
+		if key == group || allGroups {
 			for _, repo := range repos {
 				wg.Add(1)
 				go func(repo string) {

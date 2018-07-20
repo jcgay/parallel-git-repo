@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/assertgo/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -133,4 +135,64 @@ func TestListCommands(t *testing.T) {
 	assert.ThatBool(len(result) == 2).IsTrue()
 	assert.ThatString(result["pull"]).IsEqualTo("git pull")
 	assert.ThatString(result["current-branch"]).IsEqualTo("git symbolic-ref --short HEAD")
+}
+
+type PrintArguments struct{}
+
+func (command *PrintArguments) Executable() string {
+	return "echo"
+}
+
+func (command *PrintArguments) Options() []string {
+	return []string{"$@"}
+}
+
+func (command *PrintArguments) Output(output string, err error) string {
+	return output
+}
+
+func TestRunCommandWithAllGroupsActivated(t *testing.T) {
+	dir, _ := ioutil.TempDir("", "RunCommandWithAllGroupsActivated")
+	defer os.RemoveAll(dir)
+	config := `
+[repositories]
+        default = [
+                "/Users/jcgay/dev/maven-notifier"
+        ]
+        others = [
+                "/Users/jcgay/dev/gradle-notifier"
+        ]
+`
+
+	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
+	repos := newConfiguration(dir)
+
+	allGroups = true
+	defer reset()
+
+	output := new(bytes.Buffer)
+	runner := newRunner(&PrintArguments{}, repos)
+	runner.writer = output
+	runner.repos = repos
+	runner.Run([]string{"something"}, "default")
+
+	assert := assert.New(t)
+	result := strings.Split(output.String(), "\n")
+
+	fmt.Println(output.String())
+	assert.ThatBool(contains(result, "maven-notifier: something")).IsTrue()
+	assert.ThatBool(contains(result, "gradle-notifier: something")).IsTrue()
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
+}
+
+func reset() {
+	allGroups = false
 }
