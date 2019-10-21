@@ -2,56 +2,81 @@
 
 
 [[projects]]
+  digest = "1:f991e46484fbb49c80f14334588e8ddbac160c2c715ff4214e6b4276d65f76d1"
   name = "github.com/assertgo/assert"
   packages = ["."]
+  pruneopts = ""
   revision = "3806e087583b75bfd4e5808b74afc0248089d257"
   version = "v2.0.0"
 
 [[projects]]
+  digest = "1:c9bebdae4ac52d0c3bbe5876de3d72f3bb05b4986865cdb3f15e305e1dc4fbca"
   name = "github.com/fatih/color"
   packages = ["."]
+  pruneopts = ""
   revision = "570b54cabe6b8eb0bc2dfce68d964677d63b5260"
   version = "v1.5.0"
 
 [[projects]]
+  digest = "1:9ea83adf8e96d6304f394d40436f2eb44c1dc3250d223b74088cc253a6cd0a1c"
   name = "github.com/mattn/go-colorable"
   packages = ["."]
+  pruneopts = ""
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
   version = "v0.0.9"
 
 [[projects]]
+  digest = "1:420bb8eabfa6dff0cb5c8e786489a420e7e9d93a8b1d83882cce70c5a5b9bc3e"
   name = "github.com/mattn/go-isatty"
   packages = ["."]
+  pruneopts = ""
   revision = "fc9e8d8ef48496124e79ae0df75490096eccf6fe"
   version = "v0.0.2"
 
 [[projects]]
   branch = "master"
+  digest = "1:6dbb0eb72090871f2e58d1e37973fe3cb8c0f45f49459398d3fc740cb30e13bd"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
-  revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
+  pruneopts = ""
+  revision = "af06845cf3004701891bf4fdb884bfe4920b3727"
 
 [[projects]]
+  digest = "1:049b5bee78dfdc9628ee0e557219c41f683e5b06c5a5f20eaba0105ccc586689"
   name = "github.com/pelletier/go-buffruneio"
   packages = ["."]
+  pruneopts = ""
   revision = "c37440a7cf42ac63b919c752ca73a85067e05992"
   version = "v0.2.0"
 
 [[projects]]
+  digest = "1:6d5a9728ae27e477a07bb69f02ea0bade74eb8b0c7346d046337904bbf7af065"
   name = "github.com/pelletier/go-toml"
   packages = ["."]
+  pruneopts = ""
   revision = "5ccdfb18c776b740aecaf085c4d9a2779199c279"
   version = "v1.0.0"
 
 [[projects]]
   branch = "master"
+  digest = "1:575cd953d8ddd3aeee1de61e321fd6150701fc8b39f3f835b6eb1281d22b783e"
   name = "golang.org/x/sys"
   packages = ["unix"]
+  pruneopts = ""
   revision = "9f7170bcd8e9f4d3691c06401119c46a769a1e03"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "5bff254604c7192f34fe419d2cbe9d49eeabd419efa7075d2ff02c672e1285af"
+  input-imports = [
+    "github.com/assertgo/assert",
+    "github.com/fatih/color",
+    "github.com/mattn/go-colorable",
+    "github.com/mattn/go-isatty",
+    "github.com/mitchellh/go-homedir",
+    "github.com/pelletier/go-buffruneio",
+    "github.com/pelletier/go-toml",
+    "golang.org/x/sys/unix",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1
