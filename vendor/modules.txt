@@ -1,0 +1,26 @@
+# github.com/assertgo/assert v2.0.0+incompatible
+## explicit
+github.com/assertgo/assert
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+# github.com/fatih/color v1.5.0
+## explicit
+github.com/fatih/color
+# github.com/mattn/go-colorable v0.0.9
+## explicit
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.2
+## explicit
+github.com/mattn/go-isatty
+# github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747
+## explicit
+github.com/mitchellh/go-homedir
+# github.com/pelletier/go-buffruneio v0.2.0
+## explicit
+github.com/pelletier/go-buffruneio
+# github.com/pelletier/go-toml v1.0.0
+## explicit
+github.com/pelletier/go-toml
+# golang.org/x/sys v0.0.0-20170815135041-9f7170bcd8e9
+## explicit
+golang.org/x/sys/unix
