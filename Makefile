@@ -55,7 +55,7 @@ fmt: ## Verifies all files have men `gofmt`ed
 .PHONY: lint
 lint: ## Verifies `golint` passes
 	@echo "+ $@"
-	@golint ./... | grep -v vendor | tee /dev/stderr
+	@staticcheck ./... | grep -v vendor | tee /dev/stderr
 
 .PHONY: test
 test: ## Runs the go tests

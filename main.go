@@ -60,7 +60,7 @@ func main() {
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
 
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, fmt.Sprintf(help, version.VERSION, version.GITCOMMIT, listCommands()))
+		fmt.Fprintf(os.Stderr, help, version.VERSION, version.GITCOMMIT, listCommands())
 		flag.PrintDefaults()
 	}
 
@@ -131,10 +131,6 @@ func withoutFlags(args []string) []string {
 
 type repositories interface {
 	ListRepositories() map[string][]string
-}
-
-type commands interface {
-	ListCommands() map[string]string
 }
 
 type configuration struct {
