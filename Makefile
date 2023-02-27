@@ -106,11 +106,6 @@ tag: ## Create a new git tag to prepare to build a release
 	git tag -sa $(VERSION) -m "$(VERSION)"
 	@echo "Run git push origin $(VERSION) to push your new tag to GitHub and trigger a travis build."
 
-.PHONY: prepare-bintray
-prepare-bintray: ## Update bintray/descriptor.json with current version
-	$(sed) -i s/%VERSION%/$(VERSION)/g bintray/descriptor.json
-	$(sed) -i s/%DATE%/$(TODAY)/g bintray/descriptor.json
-
 .PHONY: clean
 clean: ## Cleanup any build binaries or packages
 	@echo "+ $@"
