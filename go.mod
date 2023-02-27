@@ -1,6 +1,6 @@
 module github.com/jcgay/parallel-git-repo
 
-go 1.17
+go 1.20
 
 require (
 	github.com/assertgo/assert v2.0.0+incompatible
