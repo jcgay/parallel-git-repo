@@ -1,3 +1,5 @@
+# For macOS users:
+#  - brew install coreutils
 # Prepare a GNU sed for macOS users (brew install gnu-sed)
 sed = $(shell { command -v gsed || command -v sed; } 2>/dev/null)
 
