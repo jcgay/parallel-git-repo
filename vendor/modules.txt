@@ -21,6 +21,6 @@ github.com/pelletier/go-buffruneio
 # github.com/pelletier/go-toml v1.0.0
 ## explicit
 github.com/pelletier/go-toml
-# golang.org/x/sys v0.0.0-20170815135041-9f7170bcd8e9
-## explicit
+# golang.org/x/sys v0.1.0
+## explicit; go 1.17
 golang.org/x/sys/unix
