@@ -27,7 +27,7 @@ GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
 
 # List the GOOS and GOARCH to build
-GOOSARCHES = linux/amd64 linux/386 darwin/amd64 windows/amd64
+GOOSARCHES = linux/amd64 linux/386 darwin/amd64 darwin/arm64 windows/amd64
 
 TODAY = $(shell date +"%Y-%m-%d")
 
