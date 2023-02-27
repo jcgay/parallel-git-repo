@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/assertgo/assert v2.0.0+incompatible
 	github.com/fatih/color v1.5.0
-	github.com/mitchellh/go-homedir v0.0.0-20161203194507-b8bc1bf76747
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml v1.0.0
 )
 
