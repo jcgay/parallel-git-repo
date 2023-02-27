@@ -14,5 +14,5 @@ require (
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.2 // indirect
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
-	golang.org/x/sys v0.0.0-20170815135041-9f7170bcd8e9 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 )
