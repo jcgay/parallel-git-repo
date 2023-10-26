@@ -12,7 +12,7 @@ Run command on git repositories in parallel.
 
 ### Go style
 
-    go get github.com/jcgay/parallel-git-repo
+    go install github.com/jcgay/parallel-git-repo@latest
 
 ## Configuration
 
