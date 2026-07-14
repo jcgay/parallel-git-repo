@@ -43,5 +43,5 @@ _testmain.go
 *.test
 *.prof
 
-# Cross Platform builds
-cross/
+# Release artifacts (goreleaser)
+dist/

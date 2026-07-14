@@ -13,9 +13,6 @@ PKG := github.com/jcgay/$(NAME)
 # Set any default go build tags
 BUILDTAGS :=
 
-# Set the build dir, where built cross-compiled binaries will be output
-BUILDDIR := ${PREFIX}/cross
-
 # Populate version variables
 # Add to compile time flags
 VERSION := $(shell cat version/VERSION)
@@ -27,11 +24,6 @@ endif
 CTIMEVAR=-X $(PKG)/version.GITCOMMIT=$(GITCOMMIT) -X $(PKG)/version.VERSION=$(VERSION)
 GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
 GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
-
-# List the GOOS and GOARCH to build
-GOOSARCHES = linux/amd64 linux/386 darwin/amd64 darwin/arm64 windows/amd64
-
-TODAY = $(shell date +"%Y-%m-%d")
 
 all: clean build fmt lint test vet install ## Runs a clean, build, fmt, lint, test, vet and install
 
@@ -74,45 +66,16 @@ install: ## Installs the executable or package
 	@echo "+ $@"
 	@go install .
 
-define buildpretty
-mkdir -p $(BUILDDIR)/$(1)/$(2);
-GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
-	 -o $(BUILDDIR)/$(1)/$(2)/$(NAME) \
-	 -a -tags "$(BUILDTAGS) static_build netgo" \
-	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
-md5sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).md5;
-sha256sum $(BUILDDIR)/$(1)/$(2)/$(NAME) > $(BUILDDIR)/$(1)/$(2)/$(NAME).sha256;
-endef
-
-.PHONY: cross
-cross: *.go version/VERSION ## Builds the cross-compiled binaries, creating a clean directory structure (eg. GOOS/GOARCH/binary)
-	@echo "+ $@"
-	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildpretty,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
-
-define buildrelease
-GOOS=$(1) GOARCH=$(2) CGO_ENABLED=0 go build \
-	 -o $(BUILDDIR)/$(NAME)-$(1)-$(2) \
-	 -a -tags "$(BUILDTAGS) static_build netgo" \
-	 -installsuffix netgo ${GO_LDFLAGS_STATIC} .;
-md5sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).md5;
-sha256sum $(BUILDDIR)/$(NAME)-$(1)-$(2) > $(BUILDDIR)/$(NAME)-$(1)-$(2).sha256;
-endef
-
-.PHONY: release
-release: *.go version/VERSION ## Builds the cross-compiled binaries, naming them in such a way for release (eg. binary-GOOS-GOARCH)
-	@echo "+ $@"
-	$(foreach GOOSARCH,$(GOOSARCHES), $(call buildrelease,$(subst /,,$(dir $(GOOSARCH))),$(notdir $(GOOSARCH))))
-
 .PHONY: tag
 tag: ## Create a new git tag to prepare to build a release
 	git tag -sa $(VERSION) -m "$(VERSION)"
-	@echo "Run git push origin $(VERSION) to push your new tag to GitHub and trigger a travis build."
+	@echo "Run git push origin $(VERSION) to push your new tag to GitHub; goreleaser then builds and publishes the release."
 
 .PHONY: clean
 clean: ## Cleanup any build binaries or packages
 	@echo "+ $@"
 	$(RM) $(NAME)
-	$(RM) -r $(BUILDDIR)
+	$(RM) -r dist
 
 .PHONY: help
 help:
