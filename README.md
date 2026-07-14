@@ -18,7 +18,14 @@ Download the archive for your platform from the [latest release](https://github.
 
 ## Configuration
 
-Configure the repositories list where command will be run in `$HOME/.parallel-git-repositories`:
+Configure the repositories list where command will be run in `$HOME/.parallel-git-repositories`.
+
+Point to a different file with the `-c` flag or the `PARALLEL_GIT_REPO_CONFIG` environment variable (flag wins, then env var, then the default above). This lets a team version its config inside a repository, or keep separate work and personal setups:
+
+```
+$ parallel-git-repo -c ./team-repos.toml -g all status
+$ PARALLEL_GIT_REPO_CONFIG=~/work.toml parallel-git-repo fetch
+```
 
 ```
 [repositories]

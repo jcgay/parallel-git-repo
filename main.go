@@ -59,7 +59,22 @@ var (
 	jobs         int
 	timeout      time.Duration
 	stream       bool
+	configFlag   string
 )
+
+// configFile resolves the configuration file path: the -c flag wins, then the
+// PARALLEL_GIT_REPO_CONFIG environment variable, then the historical
+// $HOME/.parallel-git-repositories. A configurable path lets a team version its
+// config inside a repository and keeps separate work/personal setups apart.
+func configFile() string {
+	if configFlag != "" {
+		return configFlag
+	}
+	if env := os.Getenv("PARALLEL_GIT_REPO_CONFIG"); env != "" {
+		return env
+	}
+	return home + "/.parallel-git-repositories"
+}
 
 const help = `NAME:
   Parallel Git Repositories - Execute commands on multiple Git repositories in parallel!
@@ -93,6 +108,7 @@ func main() {
 	flag.IntVar(&jobs, "j", 8, "maximum number of commands run in parallel")
 	flag.DurationVar(&timeout, "timeout", 60*time.Second, "kill a command that runs longer than this (0 disables)")
 	flag.BoolVar(&stream, "stream", false, "stream each repository's output live, prefixed with its name, instead of buffering whole blocks")
+	flag.StringVar(&configFlag, "c", "", "path to the configuration file (defaults to $PARALLEL_GIT_REPO_CONFIG, then $HOME/.parallel-git-repositories)")
 
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
@@ -123,13 +139,13 @@ func main() {
 	if args[0] == "add" {
 		// Handled before newConfiguration so a missing or hand-broken config
 		// file doesn't block the very command meant to write it.
-		if err := addRepository(home, args[1:]); err != nil {
+		if err := addRepository(configFile(), args[1:]); err != nil {
 			log.Fatal(err)
 		}
 		return
 	}
 
-	configuration := newConfiguration(home)
+	configuration := newConfiguration(configFile())
 	if args[0] == "list" {
 		repos, err := filterGroup(configuration.ListRepositories(), group)
 		if err != nil {
@@ -151,7 +167,7 @@ func main() {
 // invocation fatal). The path defaults to the current directory and the group
 // to "default"; a missing group is created and the rest of the file (other
 // groups, commands) is preserved.
-func addRepository(homeDir string, args []string) error {
+func addRepository(file string, args []string) error {
 	fs := flag.NewFlagSet("add", flag.ContinueOnError)
 	group := fs.String("g", "default", "group to add the repository to")
 	if err := fs.Parse(args); err != nil {
@@ -172,7 +188,6 @@ func addRepository(homeDir string, args []string) error {
 		return fmt.Errorf("%s is not a Git repository", path)
 	}
 
-	file := homeDir + "/.parallel-git-repositories"
 	tree, err := toml.LoadFile(file)
 	if os.IsNotExist(err) {
 		tree, err = toml.Load("")
@@ -216,7 +231,7 @@ func filterGroup(all map[string][]string, group string) (map[string][]string, er
 }
 
 func listCommands() string {
-	config, err := tryNewConfiguration(home)
+	config, err := tryNewConfiguration(configFile())
 	commands := make(map[string]string)
 	if err == nil {
 		commands = config.ListCommands()
@@ -287,16 +302,16 @@ type configuration struct {
 	content *toml.Tree
 }
 
-func newConfiguration(homeDir string) *configuration {
-	config, err := tryNewConfiguration(homeDir)
+func newConfiguration(file string) *configuration {
+	config, err := tryNewConfiguration(file)
 	if err != nil {
-		log.Fatalf("Can't read configuration file %s/.parallel-git-repositories, verify that the file is valid...\n%v", homeDir, err)
+		log.Fatalf("Can't read configuration file %s, verify that the file is valid...\n%v", file, err)
 	}
 	return config
 }
 
-func tryNewConfiguration(homeDir string) (*configuration, error) {
-	config, err := toml.LoadFile(homeDir + "/.parallel-git-repositories")
+func tryNewConfiguration(file string) (*configuration, error) {
+	config, err := toml.LoadFile(file)
 	if err != nil {
 		return nil, err
 	}
