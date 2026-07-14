@@ -332,8 +332,9 @@ func TestListRepositories(t *testing.T) {
     "/Users/jcgay/dev/buildplan-maven-plugin",
   ]
 `
-	os.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
-	repos := newConfiguration(dir)
+	file := dir + "/.parallel-git-repositories"
+	os.WriteFile(file, []byte(config), 0644)
+	repos := newConfiguration(file)
 
 	result := repos.ListRepositories()
 
@@ -347,17 +348,17 @@ func TestListRepositories(t *testing.T) {
 }
 
 func TestAddRegistersRepository(t *testing.T) {
-	home := t.TempDir()
-	os.WriteFile(home+"/.parallel-git-repositories", []byte("[repositories]\n  default = [\"/existing\"]\n[commands]\n  pull = \"git pull\"\n"), 0644)
+	file := t.TempDir() + "/.parallel-git-repositories"
+	os.WriteFile(file, []byte("[repositories]\n  default = [\"/existing\"]\n[commands]\n  pull = \"git pull\"\n"), 0644)
 
 	repo := t.TempDir()
 	os.Mkdir(filepath.Join(repo, ".git"), 0755)
 
-	if err := addRepository(home, []string{"-g", "work", repo}); err != nil {
+	if err := addRepository(file, []string{"-g", "work", repo}); err != nil {
 		t.Fatal(err)
 	}
 
-	config := newConfiguration(home)
+	config := newConfiguration(file)
 	if got := config.ListRepositories()["work"]; len(got) != 1 || got[0] != repo {
 		t.Errorf("got %v, want [%s]", got, repo)
 	}
@@ -369,13 +370,29 @@ func TestAddRegistersRepository(t *testing.T) {
 		t.Error("commands section was lost")
 	}
 
-	if err := addRepository(home, []string{"-g", "work", repo}); err == nil {
+	if err := addRepository(file, []string{"-g", "work", repo}); err == nil {
 		t.Error("expected an error for a duplicate repository")
 	}
 
-	if err := addRepository(home, []string{t.TempDir()}); err == nil {
+	if err := addRepository(file, []string{t.TempDir()}); err == nil {
 		t.Error("expected an error for a non-Git directory")
 	}
+}
+
+func TestConfigFilePrefersFlagThenEnvThenDefault(t *testing.T) {
+	savedHome, savedFlag := home, configFlag
+	defer func() { home, configFlag = savedHome, savedFlag }()
+
+	home = "/home/user"
+	configFlag = ""
+	os.Unsetenv("PARALLEL_GIT_REPO_CONFIG")
+	assertEqual(t, configFile(), "/home/user/.parallel-git-repositories")
+
+	t.Setenv("PARALLEL_GIT_REPO_CONFIG", "/env.toml")
+	assertEqual(t, configFile(), "/env.toml")
+
+	configFlag = "/flag.toml"
+	assertEqual(t, configFile(), "/flag.toml")
 }
 
 func TestListCommands(t *testing.T) {
@@ -389,8 +406,9 @@ func TestListCommands(t *testing.T) {
   pull = "git pull"
   current-branch = "git symbolic-ref --short HEAD"
 `
-	os.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
-	commands := newConfiguration(dir)
+	file := dir + "/.parallel-git-repositories"
+	os.WriteFile(file, []byte(config), 0644)
+	commands := newConfiguration(file)
 
 	result := commands.ListCommands()
 
