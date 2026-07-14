@@ -1,5 +1,3 @@
-github.com/assertgo/assert v2.0.0+incompatible h1:DQq+17mfy1JFBtuipbXvW+wlQOZcjMMIpuiQMW6xZUc=
-github.com/assertgo/assert v2.0.0+incompatible/go.mod h1:Q0oju7wAPpvkNFeAyzJQlOhiqW9UYVbxTN/CK2bEEpU=
 github.com/fatih/color v1.14.1 h1:qfhVLaG5s+nCROl1zJsZRxFeYrHLqWroPOQ8BWiNb4w=
 github.com/fatih/color v1.14.1/go.mod h1:2oHN61fhTpgcxD3TSWCgKDiH1+x4OiDVVGH8WlgGZGg=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
