@@ -8,31 +8,22 @@ PREFIX?=$(shell pwd)
 
 # Setup name variables for the package/tool
 NAME := parallel-git-repo
-PKG := github.com/jcgay/$(NAME)
 
 # Set any default go build tags
 BUILDTAGS :=
 
-# Populate version variables
-# Add to compile time flags
-VERSION := $(shell cat version/VERSION)
-GITCOMMIT := $(shell git rev-parse --short HEAD)
-GITUNTRACKEDCHANGES := $(shell git status --porcelain --untracked-files=no)
-ifneq ($(GITUNTRACKEDCHANGES),)
-	GITCOMMIT := $(GITCOMMIT)-dirty
-endif
-CTIMEVAR=-X $(PKG)/version.GITCOMMIT=$(GITCOMMIT) -X $(PKG)/version.VERSION=$(VERSION)
-GO_LDFLAGS=-ldflags "-w $(CTIMEVAR)"
-GO_LDFLAGS_STATIC=-ldflags "-w $(CTIMEVAR) -extldflags -static"
+# The version and commit are read at runtime from the binary's build info, so
+# no version ldflags are needed here; GoReleaser stamps the version on release.
+GO_LDFLAGS_STATIC=-ldflags "-w -extldflags -static"
 
 all: clean build fmt lint test vet install ## Runs a clean, build, fmt, lint, test, vet and install
 
 .PHONY: build
 build: $(NAME) ## Builds a dynamic executable or package
 
-$(NAME): *.go version/VERSION
+$(NAME): *.go
 	@echo "+ $@"
-	go build -tags "$(BUILDTAGS)" ${GO_LDFLAGS} -o $(NAME) .
+	go build -tags "$(BUILDTAGS)" -o $(NAME) .
 
 .PHONY: static
 static: ## Builds a static executable
@@ -67,7 +58,8 @@ install: ## Installs the executable or package
 	@go install .
 
 .PHONY: tag
-tag: ## Create a new git tag to prepare to build a release
+tag: ## Create a new git tag to prepare a release, e.g. make tag VERSION=v1.2.0
+	@test -n "$(VERSION)" || { echo "VERSION is required, e.g. make tag VERSION=v1.2.0"; exit 1; }
 	git tag -sa $(VERSION) -m "$(VERSION)"
 	@echo "Run git push origin $(VERSION) to push your new tag to GitHub; goreleaser then builds and publishes the release."
 
