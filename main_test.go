@@ -196,6 +196,38 @@ func TestRunTimesOutAHungCommand(t *testing.T) {
 	}
 }
 
+func TestSelectRepositories(t *testing.T) {
+	all := map[string][]string{
+		"default":  {"/a", "/b"},
+		"notifier": {"/b", "/c"},
+		"maven":    {"/d"},
+	}
+
+	if _, err := selectRepositories(all, "nope"); err == nil {
+		t.Error("expected an error for an unknown group")
+	}
+
+	comma, err := selectRepositories(all, "notifier,maven")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, strings.Join(comma, ","), "/b,/c,/d")
+
+	// A repo shared by two selected groups is kept once.
+	shared, err := selectRepositories(all, "default,notifier")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, strings.Join(shared, ","), "/a,/b,/c")
+
+	// "all" fans out over every group, deterministically and deduplicated.
+	every, err := selectRepositories(all, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertEqual(t, strings.Join(every, ","), "/a,/b,/d,/c")
+}
+
 func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 	result := forwardArgs([]string{"$1", "$3"}, []string{"only-first"})
 

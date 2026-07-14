@@ -266,10 +266,9 @@ func newRunner(command runnableCommand, repos repositories) *runner {
 func (runner *runner) Run(args []string, group string) int {
 	var failures atomic.Int32
 	wg := sync.WaitGroup{}
-	all := runner.repos.ListRepositories()
-	repos, found := all[group]
-	if !found {
-		fmt.Fprintf(os.Stderr, "Unknown group %q, available groups: %s\n", group, strings.Join(sortedKeys(all), ", "))
+	repos, err := selectRepositories(runner.repos.ListRepositories(), group)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		return 1
 	}
 
@@ -324,6 +323,35 @@ func (runner *runner) Run(args []string, group string) int {
 	wg.Wait()
 
 	return int(failures.Load())
+}
+
+// selectRepositories resolves a group specifier into the deduplicated list of
+// repositories to run against. The specifier may name several comma-separated
+// groups, and the special value "all" selects every group. A repository listed
+// in more than one selected group is kept once, in first-seen order. An unknown
+// group name is an error.
+func selectRepositories(all map[string][]string, group string) ([]string, error) {
+	names := strings.Split(group, ",")
+	if group == "all" {
+		names = sortedKeys(all)
+	}
+
+	seen := make(map[string]struct{})
+	var repos []string
+	for _, name := range names {
+		members, found := all[name]
+		if !found {
+			return nil, fmt.Errorf("Unknown group %q, available groups: %s", name, strings.Join(sortedKeys(all), ", "))
+		}
+		for _, repo := range members {
+			if _, dup := seen[repo]; dup {
+				continue
+			}
+			seen[repo] = struct{}{}
+			repos = append(repos, repo)
+		}
+	}
+	return repos, nil
 }
 
 var option = regexp.MustCompile(`\$([0-9]+)`)
