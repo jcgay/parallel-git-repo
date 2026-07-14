@@ -137,6 +137,32 @@ func TestRunUnknownGroupIsAFailure(t *testing.T) {
 	}
 }
 
+type MultiRepository struct {
+	dirs []string
+}
+
+func (config *MultiRepository) ListRepositories() map[string][]string {
+	for i := 0; i < 5; i++ {
+		dir, _ := os.MkdirTemp("", "parallel-git-repo")
+		config.dirs = append(config.dirs, dir)
+	}
+	return map[string][]string{"default": config.dirs}
+}
+
+func TestRunProcessesEveryRepoWhenParallelismIsBounded(t *testing.T) {
+	output := new(bytes.Buffer)
+	repos := &MultiRepository{}
+	runner := newRunner(&PrintArgumentsCommand{}, repos)
+	runner.writer = output
+	runner.jobs = 1
+
+	runner.Run([]string{"hello"}, "default")
+
+	if got := strings.Count(output.String(), "hello"); got != 5 {
+		t.Errorf("got %d repos processed, want 5", got)
+	}
+}
+
 func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 	result := forwardArgs([]string{"$1", "$3"}, []string{"only-first"})
 
