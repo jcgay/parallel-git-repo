@@ -3,18 +3,26 @@ package main
 import (
 	"bytes"
 	"github.com/assertgo/assert"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-func Example() {
+func TestVersionFlagPrintsVersion(t *testing.T) {
 	os.Args = []string{"parallel-git-repo", "-v"}
 
+	original := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
 	main()
+	w.Close()
+	os.Stdout = original
+	out, _ := io.ReadAll(r)
 
-	// Output:
-	// version: unknown-snapshot (unknown-commit)
+	// The exact version/commit depend on how the binary was built, so only
+	// assert that the version line is produced.
+	assert.New(t).ThatString(string(out)).Contains("version: ")
 }
 
 type SingleTempRepository struct {

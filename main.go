@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/jcgay/parallel-git-repo/version"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pelletier/go-toml"
 	"io"
@@ -14,12 +13,40 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
 )
 
 var home string
+
+// version is overridden at release time by GoReleaser (-X main.version=...).
+// For `go install ...@version` builds it stays "dev" and buildInfo falls back
+// to the module version stamped by the Go toolchain.
+var version = "dev"
+
+// buildInfo returns the version and short commit hash, read from the binary's
+// build information so no ldflags gymnastics are needed for the commit.
+func buildInfo() (string, string) {
+	v := version
+	var commit string
+	if info, ok := debug.ReadBuildInfo(); ok {
+		if v == "dev" && info.Main.Version != "" {
+			v = info.Main.Version
+		}
+		for _, setting := range info.Settings {
+			if setting.Key == "vcs.revision" {
+				commit = setting.Value
+				break
+			}
+		}
+	}
+	if len(commit) > 7 {
+		commit = commit[:7]
+	}
+	return v, commit
+}
 
 var (
 	quiet        bool
@@ -59,15 +86,17 @@ func main() {
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
 
+	ver, commit := buildInfo()
+
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, help, version.VERSION, version.GITCOMMIT, listCommands())
+		fmt.Fprintf(os.Stderr, help, ver, commit, listCommands())
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
 
 	if printVersion {
-		fmt.Printf("version: %s (%s)", version.VERSION, version.GITCOMMIT)
+		fmt.Printf("version: %s (%s)", ver, commit)
 		return
 	}
 
