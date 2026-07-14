@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"github.com/assertgo/assert"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,7 +22,7 @@ type SingleTempRepository struct {
 }
 
 func (config *SingleTempRepository) ListRepositories() map[string][]string {
-	config.tempDir, _ = ioutil.TempDir("", "parallel-git-repo")
+	config.tempDir, _ = os.MkdirTemp("", "parallel-git-repo")
 	return map[string][]string{"default": {config.tempDir}}
 }
 
@@ -94,8 +93,7 @@ func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 }
 
 func TestListRepositories(t *testing.T) {
-	dir, _ := ioutil.TempDir("", "ParallelGitReposListRepositories")
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 	config := `
 [repositories]
   default = [
@@ -107,7 +105,7 @@ func TestListRepositories(t *testing.T) {
     "/Users/jcgay/dev/buildplan-maven-plugin",
   ]
 `
-	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
+	os.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
 	repos := newConfiguration(dir)
 
 	result := repos.ListRepositories()
@@ -121,8 +119,7 @@ func TestListRepositories(t *testing.T) {
 }
 
 func TestListCommands(t *testing.T) {
-	dir, _ := ioutil.TempDir("", "ParallelGitReposListCommands")
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 	config := `
 [repositories]
   default = [
@@ -132,7 +129,7 @@ func TestListCommands(t *testing.T) {
   pull = "git pull"
   current-branch = "git symbolic-ref --short HEAD"
 `
-	ioutil.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
+	os.WriteFile(dir+"/.parallel-git-repositories", []byte(config), 0644)
 	commands := newConfiguration(dir)
 
 	result := commands.ListCommands()
