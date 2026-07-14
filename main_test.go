@@ -138,6 +138,21 @@ func TestRunUnknownGroupIsAFailure(t *testing.T) {
 	}
 }
 
+func TestRunStreamsOutputPrefixedWithRepositoryName(t *testing.T) {
+	output := new(bytes.Buffer)
+	repos := &SingleTempRepository{}
+
+	runner := newRunner(&PrintArgumentsCommand{}, repos)
+	runner.writer = output
+	runner.stream = true
+	runner.Run([]string{"hello", "world"}, "default")
+
+	want := repos.Dir() + " | hello world\n"
+	if !strings.Contains(output.String(), want) {
+		t.Errorf("got %q, want it to contain %q", output.String(), want)
+	}
+}
+
 type MultiRepository struct {
 	dirs []string
 }

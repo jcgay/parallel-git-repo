@@ -58,6 +58,7 @@ var (
 	printVersion bool
 	jobs         int
 	timeout      time.Duration
+	stream       bool
 )
 
 const help = `NAME:
@@ -91,6 +92,7 @@ func main() {
 	flag.BoolVar(&printVersion, "v", false, "print current version")
 	flag.IntVar(&jobs, "j", 8, "maximum number of commands run in parallel")
 	flag.DurationVar(&timeout, "timeout", 60*time.Second, "kill a command that runs longer than this (0 disables)")
+	flag.BoolVar(&stream, "stream", false, "stream each repository's output live, prefixed with its name, instead of buffering whole blocks")
 
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
@@ -265,6 +267,7 @@ func runCommand(config *configuration, args []string, group string) int {
 	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
 	runner.jobs = jobs
 	runner.timeout = timeout
+	runner.stream = stream
 	return runner.Run(args[1:], group)
 }
 
@@ -354,6 +357,10 @@ type runner struct {
 	writer  io.Writer
 	jobs    int
 	timeout time.Duration
+	stream  bool
+	// mu serialises writes to writer so lines from different repositories in
+	// stream mode land whole instead of interleaved mid-line.
+	mu sync.Mutex
 }
 
 func newRunner(command runnableCommand, repos repositories) *runner {
@@ -387,13 +394,23 @@ func (runner *runner) Run(args []string, group string) int {
 	}
 	sem := make(chan struct{}, limit)
 
+	// Align stream prefixes on the longest repository name so the ` | ` gutters
+	// line up regardless of which repo emits a line.
+	width := 0
+	if runner.stream {
+		for _, repo := range repos {
+			if n := len(filepath.Base(repo)); n > width {
+				width = n
+			}
+		}
+	}
+
 	for _, repo := range repos {
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
-			output := new(bytes.Buffer)
 
 			// Time the timeout from when the command actually starts, not when it
 			// was queued, so repos waiting on the semaphore don't burn their budget.
@@ -408,9 +425,26 @@ func (runner *runner) Run(args []string, group string) int {
 			// Stop git blocking on a credential prompt (it reads /dev/tty even when
 			// Stdin isn't wired); it fails fast instead. No effect on other commands.
 			command.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
-			command.Stdout = output
-			command.Stderr = output
 			command.Dir = repo
+
+			var output *bytes.Buffer
+			var prefixed *prefixWriter
+			if runner.stream {
+				prefixed = &prefixWriter{
+					prefix: fmt.Sprintf("%-*s | ", width, filepath.Base(repo)),
+					mu:     &runner.mu,
+					out:    runner.writer,
+				}
+				// stdout and stderr share one writer: os/exec then guarantees at most
+				// one goroutine calls Write at a time, so prefixed.buf needs no lock.
+				command.Stdout = prefixed
+				command.Stderr = prefixed
+			} else {
+				output = new(bytes.Buffer)
+				command.Stdout = output
+				command.Stderr = output
+			}
+
 			err := command.Run()
 			if ctx.Err() == context.DeadlineExceeded {
 				err = fmt.Errorf("timed out after %s", runner.timeout)
@@ -419,12 +453,58 @@ func (runner *runner) Run(args []string, group string) int {
 				failures.Add(1)
 			}
 
-			fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output(strings.TrimSpace(output.String()), err))
+			if runner.stream {
+				prefixed.flush()
+				// Output was already streamed live, so the summary only reports the
+				// final ✔/✘ status rather than re-dumping it.
+				runner.mu.Lock()
+				fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output("", err))
+				runner.mu.Unlock()
+			} else {
+				fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output(strings.TrimSpace(output.String()), err))
+			}
 		}(repo)
 	}
 	wg.Wait()
 
 	return int(failures.Load())
+}
+
+// prefixWriter turns a stream of arbitrary write chunks into whole prefixed
+// lines. Partial lines are held in buf until their newline arrives; flush emits
+// any trailing remainder. Writes to the shared out are serialised by mu so
+// lines from concurrent repositories never interleave mid-line.
+type prefixWriter struct {
+	prefix string
+	mu     *sync.Mutex
+	out    io.Writer
+	buf    []byte
+}
+
+func (p *prefixWriter) Write(b []byte) (int, error) {
+	p.buf = append(p.buf, b...)
+	for {
+		i := bytes.IndexByte(p.buf, '\n')
+		if i < 0 {
+			break
+		}
+		p.emit(p.buf[:i])
+		p.buf = p.buf[i+1:]
+	}
+	return len(b), nil
+}
+
+func (p *prefixWriter) flush() {
+	if len(p.buf) > 0 {
+		p.emit(p.buf)
+		p.buf = nil
+	}
+}
+
+func (p *prefixWriter) emit(line []byte) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	fmt.Fprintf(p.out, "%s%s\n", p.prefix, line)
 }
 
 // selectRepositories resolves a group specifier into the deduplicated list of
