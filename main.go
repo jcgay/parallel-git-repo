@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/mitchellh/go-homedir"
-	"github.com/pelletier/go-toml"
 	"io"
 	"log"
 	"os"
@@ -17,6 +14,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+
+	"github.com/fatih/color"
+	"github.com/mitchellh/go-homedir"
+	"github.com/pelletier/go-toml"
 )
 
 var home string
