@@ -60,7 +60,16 @@ Also define commands that you want to run on these repositories:
   contains = "git branch -r --contains $1"
 ```
 
-This is a [`TOML`](https://github.com/toml-lang/toml) file.
+This is a [`TOML`](https://github.com/toml-lang/toml) file. Instead of editing it by hand you can register a repository with the `add` command:
+
+```
+$> cd ~/dev/new-project && parallel-git-repo add
+Added /Users/jcgay/dev/new-project to group "default"
+
+$> parallel-git-repo add -g notifier ~/dev/gradle-notifier
+```
+
+The path defaults to the current directory and the group to `default`; a missing group is created.
 
 A command that uses shell features — quoted arguments, pipes, chaining (`&&`, `;`) or redirection — is run through `/bin/sh`, so it behaves as you would type it in a terminal:
 

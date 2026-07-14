@@ -300,6 +300,38 @@ func TestListRepositories(t *testing.T) {
 	assertEqual(t, result["others"][1], "/Users/jcgay/dev/buildplan-maven-plugin")
 }
 
+func TestAddRegistersRepository(t *testing.T) {
+	home := t.TempDir()
+	os.WriteFile(home+"/.parallel-git-repositories", []byte("[repositories]\n  default = [\"/existing\"]\n[commands]\n  pull = \"git pull\"\n"), 0644)
+
+	repo := t.TempDir()
+	os.Mkdir(filepath.Join(repo, ".git"), 0755)
+
+	if err := addRepository(home, []string{"-g", "work", repo}); err != nil {
+		t.Fatal(err)
+	}
+
+	config := newConfiguration(home)
+	if got := config.ListRepositories()["work"]; len(got) != 1 || got[0] != repo {
+		t.Errorf("got %v, want [%s]", got, repo)
+	}
+	// The rest of the file is preserved, not rewritten from scratch.
+	if len(config.ListRepositories()["default"]) != 1 {
+		t.Error("existing group was lost")
+	}
+	if config.ListCommands()["pull"] != "git pull" {
+		t.Error("commands section was lost")
+	}
+
+	if err := addRepository(home, []string{"-g", "work", repo}); err == nil {
+		t.Error("expected an error for a duplicate repository")
+	}
+
+	if err := addRepository(home, []string{t.TempDir()}); err == nil {
+		t.Error("expected an error for a non-Git directory")
+	}
+}
+
 func TestListCommands(t *testing.T) {
 	dir := t.TempDir()
 	config := `
