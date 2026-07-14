@@ -4,11 +4,13 @@ Run command on git repositories in parallel.
 
 ## Installation
 
+### Homebrew
+
+    brew install jcgay/jcgay/parallel-git-repo
+
 ### Binaries
 
- - [macOS (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-darwin-amd64)
- - Linux: [32 bits](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-linux-386) / [64 bits](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-linux-amd64)
- - [Windows (64 bits)](https://bintray.com/jcgay/tools/download_file?file_path=v1.0.1%2Fparallel-git-repo-windows-amd64)
+Download the archive for your platform from the [latest release](https://github.com/jcgay/parallel-git-repo/releases/latest).
 
 ### Go style
 
@@ -86,13 +88,15 @@ maven-notifier: ✔
 
 ### Status
 
-[![Build Status](https://travis-ci.org/jcgay/parallel-git-repo.svg?branch=master)](https://travis-ci.org/jcgay/parallel-git-repo)
+[![Build Status](https://github.com/jcgay/parallel-git-repo/actions/workflows/go.yml/badge.svg)](https://github.com/jcgay/parallel-git-repo/actions/workflows/go.yml)
 [![Code Report](https://goreportcard.com/badge/github.com/jcgay/parallel-git-repo)](https://goreportcard.com/report/github.com/jcgay/parallel-git-repo)
-[![Coverage Status](https://coveralls.io/repos/github/jcgay/parallel-git-repo/badge.svg?branch=master)](https://coveralls.io/github/jcgay/parallel-git-repo?branch=master)
 
 ### Release
 
-    make release
+Push a tag; the release workflow builds the binaries with [GoReleaser](https://goreleaser.com) and publishes them to GitHub Releases:
+
+    make tag
+    git push origin <version>
 
 ### List available tasks
 
