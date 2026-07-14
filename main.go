@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
@@ -119,8 +120,8 @@ func main() {
 				fmt.Printf("  - %s\n", repo)
 			}
 		}
-	} else {
-		runCommand(configuration, args, group)
+	} else if runCommand(configuration, args, group) > 0 {
+		os.Exit(1)
 	}
 }
 
@@ -147,7 +148,7 @@ func listCommands() string {
 	return result
 }
 
-func runCommand(config *configuration, args []string, group string) {
+func runCommand(config *configuration, args []string, group string) int {
 	commandName := args[0]
 	var toExec []string
 	if commandName == "run" {
@@ -161,7 +162,7 @@ func runCommand(config *configuration, args []string, group string) {
 	}
 
 	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
-	runner.Run(args[1:], group)
+	return runner.Run(args[1:], group)
 }
 
 type repositories interface {
@@ -241,10 +242,13 @@ func newRunner(command runnableCommand, repos repositories) *runner {
 	}
 }
 
-func (runner *runner) Run(args []string, group string) {
+func (runner *runner) Run(args []string, group string) int {
+	var failures atomic.Int32
+	found := false
 	wg := sync.WaitGroup{}
 	for key, repos := range runner.repos.ListRepositories() {
 		if key == group {
+			found = true
 			for _, repo := range repos {
 				wg.Add(1)
 				go func(repo string) {
@@ -256,6 +260,9 @@ func (runner *runner) Run(args []string, group string) {
 					command.Stderr = output
 					command.Dir = repo
 					err := command.Run()
+					if err != nil {
+						failures.Add(1)
+					}
 
 					fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output(strings.TrimSpace(output.String()), err))
 				}(repo)
@@ -263,6 +270,12 @@ func (runner *runner) Run(args []string, group string) {
 		}
 	}
 	wg.Wait()
+
+	if !found {
+		fmt.Fprintf(os.Stderr, "Unknown group %q, run `list` to show available groups.\n", group)
+		return 1
+	}
+	return int(failures.Load())
 }
 
 var option = regexp.MustCompile(`\$([0-9]+)`)

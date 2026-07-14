@@ -99,6 +99,44 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	assertEqual(t, output.String(), repos.Dir()+": first path/10 option=third 4-7\n")
 }
 
+type FailingCommand struct{}
+
+func (command *FailingCommand) Executable() string { return "false" }
+
+func (command *FailingCommand) Options() []string { return []string{} }
+
+func (command *FailingCommand) Output(output string, err error) string { return "" }
+
+func TestRunReturnsFailureCount(t *testing.T) {
+	repos := &SingleTempRepository{}
+	runner := newRunner(&FailingCommand{}, repos)
+	runner.writer = new(bytes.Buffer)
+
+	if failures := runner.Run(nil, "default"); failures != 1 {
+		t.Errorf("got %d failures, want 1", failures)
+	}
+}
+
+func TestRunSucceedsWithZeroFailures(t *testing.T) {
+	repos := &SingleTempRepository{}
+	runner := newRunner(&PrintArgumentsCommand{}, repos)
+	runner.writer = new(bytes.Buffer)
+
+	if failures := runner.Run(nil, "default"); failures != 0 {
+		t.Errorf("got %d failures, want 0", failures)
+	}
+}
+
+func TestRunUnknownGroupIsAFailure(t *testing.T) {
+	repos := &SingleTempRepository{}
+	runner := newRunner(&PrintArgumentsCommand{}, repos)
+	runner.writer = new(bytes.Buffer)
+
+	if failures := runner.Run(nil, "does-not-exist"); failures == 0 {
+		t.Error("got 0 failures for an unknown group, want non-zero")
+	}
+}
+
 func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 	result := forwardArgs([]string{"$1", "$3"}, []string{"only-first"})
 
