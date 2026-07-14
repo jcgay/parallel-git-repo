@@ -60,6 +60,7 @@ var (
 	timeout      time.Duration
 	stream       bool
 	configFlag   string
+	failed       bool
 )
 
 // configFile resolves the configuration file path: the -c flag wins, then the
@@ -109,6 +110,7 @@ func main() {
 	flag.DurationVar(&timeout, "timeout", 60*time.Second, "kill a command that runs longer than this (0 disables)")
 	flag.BoolVar(&stream, "stream", false, "stream each repository's output live, prefixed with its name, instead of buffering whole blocks")
 	flag.StringVar(&configFlag, "c", "", "path to the configuration file (defaults to $PARALLEL_GIT_REPO_CONFIG, then $HOME/.parallel-git-repositories)")
+	flag.BoolVar(&failed, "failed", false, "only print repositories whose command failed, followed by a ✔/✘ summary line")
 
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
@@ -283,6 +285,7 @@ func runCommand(config *configuration, args []string, group string) int {
 	runner.jobs = jobs
 	runner.timeout = timeout
 	runner.stream = stream
+	runner.failed = failed
 	return runner.Run(args[1:], group)
 }
 
@@ -373,6 +376,7 @@ type runner struct {
 	jobs    int
 	timeout time.Duration
 	stream  bool
+	failed  bool
 	// mu serialises writes to writer so lines from different repositories in
 	// stream mode land whole instead of interleaved mid-line.
 	mu sync.Mutex
@@ -468,6 +472,12 @@ func (runner *runner) Run(args []string, group string) int {
 				failures.Add(1)
 			}
 
+			// --failed drops the per-repo line for successes so the few failures
+			// aren't buried under a wall of ✔ across dozens of repositories.
+			if runner.failed && err == nil {
+				return
+			}
+
 			if runner.stream {
 				prefixed.flush()
 				// Output was already streamed live, so the summary only reports the
@@ -482,7 +492,12 @@ func (runner *runner) Run(args []string, group string) int {
 	}
 	wg.Wait()
 
-	return int(failures.Load())
+	failed := int(failures.Load())
+	if runner.failed {
+		fmt.Fprintf(runner.writer, "\n%d %s / %d %s\n", len(repos)-failed, ok, failed, ko)
+	}
+
+	return failed
 }
 
 // prefixWriter turns a stream of arbitrary write chunks into whole prefixed

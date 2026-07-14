@@ -153,6 +153,40 @@ func TestRunStreamsOutputPrefixedWithRepositoryName(t *testing.T) {
 	}
 }
 
+func TestRunFailedHidesSuccessesAndPrintsSummary(t *testing.T) {
+	output := new(bytes.Buffer)
+	repos := &SingleTempRepository{}
+
+	runner := newRunner(&PrintArgumentsCommand{}, repos)
+	runner.writer = output
+	runner.failed = true
+	runner.Run([]string{"hello"}, "default")
+
+	if strings.Contains(output.String(), repos.Dir()) {
+		t.Errorf("--failed should hide successful repositories, got %q", output.String())
+	}
+	if !strings.Contains(output.String(), "1 ✔ / 0 ✘") {
+		t.Errorf("expected a ✔/✘ summary line, got %q", output.String())
+	}
+}
+
+func TestRunFailedKeepsFailingRepositories(t *testing.T) {
+	output := new(bytes.Buffer)
+	repos := &SingleTempRepository{}
+
+	runner := newRunner(&FailingCommand{}, repos)
+	runner.writer = output
+	runner.failed = true
+	runner.Run(nil, "default")
+
+	if !strings.Contains(output.String(), repos.Dir()) {
+		t.Errorf("--failed should keep failing repositories, got %q", output.String())
+	}
+	if !strings.Contains(output.String(), "0 ✔ / 1 ✘") {
+		t.Errorf("expected a ✔/✘ summary line, got %q", output.String())
+	}
+}
+
 type MultiRepository struct {
 	dirs []string
 }
