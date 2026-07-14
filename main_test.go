@@ -235,6 +235,44 @@ func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 	assertEqual(t, result[1], "$3")
 }
 
+func TestNeedsShell(t *testing.T) {
+	shell := []string{
+		`git commit -m "two words"`,
+		"git branch --merged | grep -v master",
+		"git fetch -p && git pull",
+	}
+	for _, c := range shell {
+		if !needsShell(c) {
+			t.Errorf("needsShell(%q) = false, want true", c)
+		}
+	}
+	for _, c := range []string{"git pull", "git push $@", "mvn versions:set -DnewVersion=$1"} {
+		if needsShell(c) {
+			t.Errorf("needsShell(%q) = true, want false", c)
+		}
+	}
+}
+
+// shellCommand mirrors how runCommand wraps a metacharacter-bearing command so
+// the routing can be exercised end-to-end through the runner.
+type shellCommand struct{ toExec []string }
+
+func (c *shellCommand) Executable() string              { return c.toExec[0] }
+func (c *shellCommand) Options() []string               { return c.toExec[1:] }
+func (c *shellCommand) Output(o string, _ error) string { return o }
+
+func TestShellCommandHonoursQuotesPipesAndArguments(t *testing.T) {
+	output := new(bytes.Buffer)
+	repos := &SingleTempRepository{}
+	// Quoted argument kept whole, then piped, then a forwarded "$@".
+	runner := newRunner(&shellCommand{[]string{"/bin/sh", "-c", `echo "two words" | tr a-z A-Z && echo "$@"`, "sh", "$@"}}, repos)
+	runner.writer = output
+
+	runner.Run([]string{"forwarded"}, "default")
+
+	assertEqual(t, output.String(), repos.Dir()+": TWO WORDS\nforwarded\n")
+}
+
 func TestListRepositories(t *testing.T) {
 	dir := t.TempDir()
 	config := `
