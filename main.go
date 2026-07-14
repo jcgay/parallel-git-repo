@@ -129,7 +129,10 @@ func main() {
 
 	configuration := newConfiguration(home)
 	if args[0] == "list" {
-		repos := configuration.ListRepositories()
+		repos, err := filterGroup(configuration.ListRepositories(), group)
+		if err != nil {
+			log.Fatal(err)
+		}
 		for key, repos := range repos {
 			fmt.Printf("%s:\n", key)
 			for _, repo := range repos {
@@ -193,6 +196,21 @@ func addRepository(homeDir string, args []string) error {
 	}
 	fmt.Printf("Added %s to group %q\n", path, *group)
 	return nil
+}
+
+// filterGroup narrows the group map to the requested group so `list` previews
+// the same repositories `run` would touch, instead of always dumping every
+// group. -g left at its default keeps the whole config; an explicit unknown
+// group is an error, mirroring selectRepositories.
+func filterGroup(all map[string][]string, group string) (map[string][]string, error) {
+	if group == "default" {
+		return all, nil
+	}
+	members, found := all[group]
+	if !found {
+		return nil, fmt.Errorf("Unknown group %q, available groups: %s", group, strings.Join(sortedKeys(all), ", "))
+	}
+	return map[string][]string{group: members}, nil
 }
 
 func listCommands() string {

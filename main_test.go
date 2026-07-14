@@ -228,6 +228,37 @@ func TestSelectRepositories(t *testing.T) {
 	assertEqual(t, strings.Join(every, ","), "/a,/b,/d,/c")
 }
 
+func TestFilterGroup(t *testing.T) {
+	all := map[string][]string{
+		"default":  {"/a"},
+		"notifier": {"/b", "/c"},
+	}
+
+	// Default keeps every group.
+	if got := len(mustFilter(t, all, "default")); got != 2 {
+		t.Errorf("default should list every group, got %d", got)
+	}
+
+	// An explicit group lists only that group.
+	only := mustFilter(t, all, "notifier")
+	if len(only) != 1 || strings.Join(only["notifier"], ",") != "/b,/c" {
+		t.Errorf("expected only notifier group, got %v", only)
+	}
+
+	if _, err := filterGroup(all, "nope"); err == nil {
+		t.Error("expected an error for an unknown group")
+	}
+}
+
+func mustFilter(t *testing.T, all map[string][]string, group string) map[string][]string {
+	t.Helper()
+	got, err := filterGroup(all, group)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return got
+}
+
 func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 	result := forwardArgs([]string{"$1", "$3"}, []string{"only-first"})
 
