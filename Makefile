@@ -1,11 +1,3 @@
-# For macOS users:
-#  - brew install coreutils
-# Prepare a GNU sed for macOS users (brew install gnu-sed)
-sed = $(shell { command -v gsed || command -v sed; } 2>/dev/null)
-
-# Set an output prefix, which is the local directory if not specified
-PREFIX?=$(shell pwd)
-
 # Setup name variables for the package/tool
 NAME := parallel-git-repo
 
@@ -33,24 +25,24 @@ static: ## Builds a static executable
 				${GO_LDFLAGS_STATIC} -o $(NAME) .
 
 .PHONY: fmt
-fmt: ## Verifies all files have men `gofmt`ed
+fmt: ## Verifies all files have been `gofmt`ed
 	@echo "+ $@"
-	@gofmt -s -l . | grep -v vendor | tee /dev/stderr
+	@test -z "$$(gofmt -s -l . | tee /dev/stderr)"
 
 .PHONY: lint
-lint: ## Verifies `golint` passes
+lint: ## Verifies `staticcheck` passes
 	@echo "+ $@"
-	@staticcheck ./... | grep -v vendor | tee /dev/stderr
+	@go run honnef.co/go/tools/cmd/staticcheck@latest ./...
 
 .PHONY: test
 test: ## Runs the go tests
 	@echo "+ $@"
-	@go test -v -tags "$(BUILDTAGS)" $(shell go list ./... | grep -v vendor)
+	@go test -v -tags "$(BUILDTAGS)" ./...
 
 .PHONY: vet
 vet: ## Verifies `go vet` passes
 	@echo "+ $@"
-	@go vet $(shell go list ./... | grep -v vendor) | tee /dev/stderr
+	@go vet ./...
 
 .PHONY: install
 install: ## Installs the executable or package
