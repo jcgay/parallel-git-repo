@@ -1,0 +1,32 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    # Same platform set that the old Makefile `release` target produced.
+    targets:
+      - linux_amd64
+      - linux_386
+      - darwin_amd64
+      - darwin_arm64
+      - windows_amd64
+    ldflags:
+      - -s -w
+      - -X github.com/jcgay/parallel-git-repo/version.VERSION={{ .Version }}
+      - -X github.com/jcgay/parallel-git-repo/version.GITCOMMIT={{ .ShortCommit }}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+checksum:
+  name_template: checksums.txt
+
+release:
+  draft: true
