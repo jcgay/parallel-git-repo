@@ -165,13 +165,33 @@ func runCommand(config *configuration, args []string, group string) int {
 		if !ok {
 			log.Fatalf("Unknown command %q, run with -h to list available commands.", commandName)
 		}
-		toExec = strings.Split(command, " ")
+		if needsShell(command) {
+			// A naive split on spaces cannot express quoted arguments, pipes or
+			// chaining, so route these through the shell. User arguments arrive as
+			// the shell's "$@", matching the $@ placeholder plain commands use.
+			if !strings.Contains(command, "$@") {
+				command += ` "$@"`
+			}
+			// The trailing $@ is a placeholder token forwardArgs expands into the
+			// shell's positional parameters ($1, $2, "$@") after the sh name.
+			toExec = []string{"/bin/sh", "-c", command, "sh", "$@"}
+		} else {
+			toExec = strings.Split(command, " ")
+		}
 	}
 
 	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
 	runner.jobs = jobs
 	runner.timeout = timeout
 	return runner.Run(args[1:], group)
+}
+
+// needsShell reports whether a configured command relies on shell features
+// (quotes, pipes, chaining, redirection, subshells) that a plain space-split
+// cannot honour. The $N/$@ placeholders are deliberately excluded so plain
+// commands keep the faster direct-exec path.
+func needsShell(command string) bool {
+	return strings.ContainsAny(command, "|&;<>()`\"'")
 }
 
 type repositories interface {

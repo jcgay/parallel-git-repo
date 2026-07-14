@@ -62,6 +62,16 @@ Also define commands that you want to run on these repositories:
 
 This is a [`TOML`](https://github.com/toml-lang/toml) file.
 
+A command that uses shell features — quoted arguments, pipes, chaining (`&&`, `;`) or redirection — is run through `/bin/sh`, so it behaves as you would type it in a terminal:
+
+```
+[commands]
+  gone = "git branch --merged | grep -v master"
+  sync = "git fetch -p && git pull"
+```
+
+Plain commands (no shell metacharacters) are executed directly, without a shell. In both cases the `$@` and `$1`, `$2`… placeholders are replaced with the arguments you pass on the command line.
+
 ## Usage
 
 ### List available commands:
