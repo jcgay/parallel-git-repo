@@ -84,6 +84,12 @@ maven-notifier: ✔
 
     parallel-git-repo -g=notifier status
 
+### Limit how many commands run in parallel
+
+By default at most 8 commands run at once. Use `-j` to change the limit (`-j 1` runs sequentially):
+
+    parallel-git-repo -j 4 pull
+
 ## Build
 
 ### Status

@@ -54,6 +54,7 @@ func buildInfo() (string, string) {
 var (
 	quiet        bool
 	printVersion bool
+	jobs         int
 )
 
 const help = `NAME:
@@ -85,6 +86,7 @@ func main() {
 
 	flag.BoolVar(&quiet, "q", false, "do not print stdout commands result, only stderr will be shown")
 	flag.BoolVar(&printVersion, "v", false, "print current version")
+	flag.IntVar(&jobs, "j", 8, "maximum number of commands run in parallel")
 
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
@@ -163,6 +165,7 @@ func runCommand(config *configuration, args []string, group string) int {
 	}
 
 	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
+	runner.jobs = jobs
 	return runner.Run(args[1:], group)
 }
 
@@ -242,6 +245,7 @@ type runner struct {
 
 	repos  repositories
 	writer io.Writer
+	jobs   int
 }
 
 func newRunner(command runnableCommand, repos repositories) *runner {
@@ -249,6 +253,7 @@ func newRunner(command runnableCommand, repos repositories) *runner {
 		runnableCommand: command,
 		repos:           repos,
 		writer:          os.Stdout,
+		jobs:            8,
 	}
 }
 
@@ -261,13 +266,29 @@ func (runner *runner) Run(args []string, group string) int {
 		fmt.Fprintf(os.Stderr, "Unknown group %q, available groups: %s\n", group, strings.Join(sortedKeys(all), ", "))
 		return 1
 	}
+
+	// forwardArgs is deterministic, so compute the argument list once instead of
+	// once per goroutine.
+	argv := forwardArgs(runner.runnableCommand.Options(), args)
+
+	// Bound the number of concurrent child processes: without a limit, a large
+	// group spawns one git process per repository at once, thrashing disk and
+	// tripping server-side limits on concurrent SSH connections.
+	limit := runner.jobs
+	if limit < 1 {
+		limit = 1
+	}
+	sem := make(chan struct{}, limit)
+
 	for _, repo := range repos {
 		wg.Add(1)
 		go func(repo string) {
 			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
 			output := new(bytes.Buffer)
 
-			command := exec.Command(runner.runnableCommand.Executable(), forwardArgs(runner.runnableCommand.Options(), args)...)
+			command := exec.Command(runner.runnableCommand.Executable(), argv...)
 			command.Stdout = output
 			command.Stderr = output
 			command.Dir = repo
