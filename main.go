@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/mitchellh/go-homedir"
@@ -55,6 +57,7 @@ var (
 	quiet        bool
 	printVersion bool
 	jobs         int
+	timeout      time.Duration
 )
 
 const help = `NAME:
@@ -87,6 +90,7 @@ func main() {
 	flag.BoolVar(&quiet, "q", false, "do not print stdout commands result, only stderr will be shown")
 	flag.BoolVar(&printVersion, "v", false, "print current version")
 	flag.IntVar(&jobs, "j", 8, "maximum number of commands run in parallel")
+	flag.DurationVar(&timeout, "timeout", 60*time.Second, "kill a command that runs longer than this (0 disables)")
 
 	var group string
 	flag.StringVar(&group, "g", "default", "execute command for a specific repositories group")
@@ -166,6 +170,7 @@ func runCommand(config *configuration, args []string, group string) int {
 
 	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
 	runner.jobs = jobs
+	runner.timeout = timeout
 	return runner.Run(args[1:], group)
 }
 
@@ -243,9 +248,10 @@ type runnableCommand interface {
 type runner struct {
 	runnableCommand
 
-	repos  repositories
-	writer io.Writer
-	jobs   int
+	repos   repositories
+	writer  io.Writer
+	jobs    int
+	timeout time.Duration
 }
 
 func newRunner(command runnableCommand, repos repositories) *runner {
@@ -288,11 +294,26 @@ func (runner *runner) Run(args []string, group string) int {
 			defer func() { <-sem }()
 			output := new(bytes.Buffer)
 
-			command := exec.Command(runner.runnableCommand.Executable(), argv...)
+			// Time the timeout from when the command actually starts, not when it
+			// was queued, so repos waiting on the semaphore don't burn their budget.
+			ctx := context.Background()
+			if runner.timeout > 0 {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, runner.timeout)
+				defer cancel()
+			}
+
+			command := exec.CommandContext(ctx, runner.runnableCommand.Executable(), argv...)
+			// Stop git blocking on a credential prompt (it reads /dev/tty even when
+			// Stdin isn't wired); it fails fast instead. No effect on other commands.
+			command.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
 			command.Stdout = output
 			command.Stderr = output
 			command.Dir = repo
 			err := command.Run()
+			if ctx.Err() == context.DeadlineExceeded {
+				err = fmt.Errorf("timed out after %s", runner.timeout)
+			}
 			if err != nil {
 				failures.Add(1)
 			}
