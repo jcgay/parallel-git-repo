@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime/debug"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -201,6 +202,15 @@ func (config *configuration) ListRepositories() map[string][]string {
 	return result
 }
 
+func sortedKeys(m map[string][]string) []string {
+	keys := make([]string, 0, len(m))
+	for key := range m {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
 func toStringArray(values []interface{}) []string {
 	result := make([]string, len(values))
 	for i, value := range values {
@@ -244,37 +254,33 @@ func newRunner(command runnableCommand, repos repositories) *runner {
 
 func (runner *runner) Run(args []string, group string) int {
 	var failures atomic.Int32
-	found := false
 	wg := sync.WaitGroup{}
-	for key, repos := range runner.repos.ListRepositories() {
-		if key == group {
-			found = true
-			for _, repo := range repos {
-				wg.Add(1)
-				go func(repo string) {
-					defer wg.Done()
-					output := new(bytes.Buffer)
+	all := runner.repos.ListRepositories()
+	repos, found := all[group]
+	if !found {
+		fmt.Fprintf(os.Stderr, "Unknown group %q, available groups: %s\n", group, strings.Join(sortedKeys(all), ", "))
+		return 1
+	}
+	for _, repo := range repos {
+		wg.Add(1)
+		go func(repo string) {
+			defer wg.Done()
+			output := new(bytes.Buffer)
 
-					command := exec.Command(runner.runnableCommand.Executable(), forwardArgs(runner.runnableCommand.Options(), args)...)
-					command.Stdout = output
-					command.Stderr = output
-					command.Dir = repo
-					err := command.Run()
-					if err != nil {
-						failures.Add(1)
-					}
-
-					fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output(strings.TrimSpace(output.String()), err))
-				}(repo)
+			command := exec.Command(runner.runnableCommand.Executable(), forwardArgs(runner.runnableCommand.Options(), args)...)
+			command.Stdout = output
+			command.Stderr = output
+			command.Dir = repo
+			err := command.Run()
+			if err != nil {
+				failures.Add(1)
 			}
-		}
+
+			fmt.Fprintln(runner.writer, filepath.Base(repo)+": "+runner.runnableCommand.Output(strings.TrimSpace(output.String()), err))
+		}(repo)
 	}
 	wg.Wait()
 
-	if !found {
-		fmt.Fprintf(os.Stderr, "Unknown group %q, run `list` to show available groups.\n", group)
-		return 1
-	}
 	return int(failures.Load())
 }
 
