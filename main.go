@@ -118,6 +118,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if args[0] == "add" {
+		// Handled before newConfiguration so a missing or hand-broken config
+		// file doesn't block the very command meant to write it.
+		if err := addRepository(home, args[1:]); err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
+
 	configuration := newConfiguration(home)
 	if args[0] == "list" {
 		repos := configuration.ListRepositories()
@@ -130,6 +139,60 @@ func main() {
 	} else if runCommand(configuration, args, group) > 0 {
 		os.Exit(1)
 	}
+}
+
+// addRepository registers a repository in the config file so onboarding no
+// longer means hand-editing hidden TOML (a single typo there makes every later
+// invocation fatal). The path defaults to the current directory and the group
+// to "default"; a missing group is created and the rest of the file (other
+// groups, commands) is preserved.
+func addRepository(homeDir string, args []string) error {
+	fs := flag.NewFlagSet("add", flag.ContinueOnError)
+	group := fs.String("g", "default", "group to add the repository to")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	path := "."
+	if fs.NArg() > 0 {
+		path = fs.Arg(0)
+	}
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return err
+	}
+	// .git is a directory in a normal clone but a file in worktrees and
+	// submodules, so Stat (not IsDir) is the right check.
+	if _, err := os.Stat(filepath.Join(path, ".git")); err != nil {
+		return fmt.Errorf("%s is not a Git repository", path)
+	}
+
+	file := homeDir + "/.parallel-git-repositories"
+	tree, err := toml.LoadFile(file)
+	if os.IsNotExist(err) {
+		tree, err = toml.Load("")
+	}
+	if err != nil {
+		return err
+	}
+
+	members := (&configuration{tree}).ListRepositories()[*group]
+	for _, repo := range members {
+		if repo == path {
+			return fmt.Errorf("%s is already in group %q", path, *group)
+		}
+	}
+	tree.SetPath([]string{"repositories", *group}, append(members, path))
+
+	out, err := tree.ToTomlString()
+	if err != nil {
+		return err
+	}
+	if err := os.WriteFile(file, []byte(out), 0644); err != nil {
+		return err
+	}
+	fmt.Printf("Added %s to group %q\n", path, *group)
+	return nil
 }
 
 func listCommands() string {
@@ -148,6 +211,7 @@ func listCommands() string {
 
 	result := fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "run", "run an arbitrary command")
 	result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "list", "list repositories where command will be run")
+	result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "add", "register the current (or given) repository in a group")
 	for key, value := range commands {
 		result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", key, value)
 	}
