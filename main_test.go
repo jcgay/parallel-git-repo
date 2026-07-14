@@ -2,12 +2,19 @@ package main
 
 import (
 	"bytes"
-	"github.com/assertgo/assert"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func assertEqual(t *testing.T, got, want string) {
+	t.Helper()
+	if got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+}
 
 func TestVersionFlagPrintsVersion(t *testing.T) {
 	os.Args = []string{"parallel-git-repo", "-v"}
@@ -22,7 +29,9 @@ func TestVersionFlagPrintsVersion(t *testing.T) {
 
 	// The exact version/commit depend on how the binary was built, so only
 	// assert that the version line is produced.
-	assert.New(t).ThatString(string(out)).Contains("version: ")
+	if !strings.Contains(string(out), "version: ") {
+		t.Errorf("expected a version line, got %q", out)
+	}
 }
 
 type SingleTempRepository struct {
@@ -61,8 +70,7 @@ func TestRunCommandWithArguments(t *testing.T) {
 	runner.repos = repos
 	runner.Run([]string{"first", "second"}, "default")
 
-	assert := assert.New(t)
-	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first second\n")
+	assertEqual(t, output.String(), repos.Dir()+": first second\n")
 }
 
 type PrintArgumentsWithIndexCommand struct{}
@@ -88,16 +96,14 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	runner.repos = repos
 	runner.Run([]string{"first", "second", "third", "4", "5", "6", "7", "8", "9", "10"}, "default")
 
-	assert := assert.New(t)
-	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first path/10 option=third 4-7\n")
+	assertEqual(t, output.String(), repos.Dir()+": first path/10 option=third 4-7\n")
 }
 
 func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
 	result := forwardArgs([]string{"$1", "$3"}, []string{"only-first"})
 
-	assert := assert.New(t)
-	assert.ThatString(result[0]).IsEqualTo("only-first")
-	assert.ThatString(result[1]).IsEqualTo("$3")
+	assertEqual(t, result[0], "only-first")
+	assertEqual(t, result[1], "$3")
 }
 
 func TestListRepositories(t *testing.T) {
@@ -118,12 +124,13 @@ func TestListRepositories(t *testing.T) {
 
 	result := repos.ListRepositories()
 
-	assert := assert.New(t)
-	assert.ThatBool(len(result) == 2).IsTrue()
-	assert.ThatString(result["default"][0]).IsEqualTo("/Users/jcgay/dev/maven-notifier")
-	assert.ThatString(result["default"][1]).IsEqualTo("/Users/jcgay/dev/maven-color")
-	assert.ThatString(result["others"][0]).IsEqualTo("/Users/jcgay/dev/gradle-notifier")
-	assert.ThatString(result["others"][1]).IsEqualTo("/Users/jcgay/dev/buildplan-maven-plugin")
+	if len(result) != 2 {
+		t.Fatalf("expected 2 groups, got %d", len(result))
+	}
+	assertEqual(t, result["default"][0], "/Users/jcgay/dev/maven-notifier")
+	assertEqual(t, result["default"][1], "/Users/jcgay/dev/maven-color")
+	assertEqual(t, result["others"][0], "/Users/jcgay/dev/gradle-notifier")
+	assertEqual(t, result["others"][1], "/Users/jcgay/dev/buildplan-maven-plugin")
 }
 
 func TestListCommands(t *testing.T) {
@@ -142,8 +149,9 @@ func TestListCommands(t *testing.T) {
 
 	result := commands.ListCommands()
 
-	assert := assert.New(t)
-	assert.ThatBool(len(result) == 2).IsTrue()
-	assert.ThatString(result["pull"]).IsEqualTo("git pull")
-	assert.ThatString(result["current-branch"]).IsEqualTo("git symbolic-ref --short HEAD")
+	if len(result) != 2 {
+		t.Fatalf("expected 2 commands, got %d", len(result))
+	}
+	assertEqual(t, result["pull"], "git pull")
+	assertEqual(t, result["current-branch"], "git symbolic-ref --short HEAD")
 }
