@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func assertEqual(t *testing.T, got, want string) {
@@ -160,6 +161,38 @@ func TestRunProcessesEveryRepoWhenParallelismIsBounded(t *testing.T) {
 
 	if got := strings.Count(output.String(), "hello"); got != 5 {
 		t.Errorf("got %d repos processed, want 5", got)
+	}
+}
+
+type SleepCommand struct{}
+
+func (command *SleepCommand) Executable() string {
+	return "sleep"
+}
+
+func (command *SleepCommand) Options() []string {
+	return []string{"10"}
+}
+
+func (command *SleepCommand) Output(output string, err error) string {
+	if err != nil {
+		return err.Error()
+	}
+	return output
+}
+
+func TestRunTimesOutAHungCommand(t *testing.T) {
+	output := new(bytes.Buffer)
+	repos := &SingleTempRepository{}
+	runner := newRunner(&SleepCommand{}, repos)
+	runner.writer = output
+	runner.timeout = 50 * time.Millisecond
+
+	if failures := runner.Run(nil, "default"); failures != 1 {
+		t.Errorf("got %d failures, want 1", failures)
+	}
+	if !strings.Contains(output.String(), "timed out") {
+		t.Errorf("expected a timeout message, got %q", output.String())
 	}
 }
 
