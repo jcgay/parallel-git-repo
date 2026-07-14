@@ -133,9 +133,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		for key, repos := range repos {
+		for _, key := range sortedKeys(repos) {
 			fmt.Printf("%s:\n", key)
-			for _, repo := range repos {
+			for _, repo := range repos[key] {
 				fmt.Printf("  - %s\n", repo)
 			}
 		}
@@ -230,8 +230,8 @@ func listCommands() string {
 	result := fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "run", "run an arbitrary command")
 	result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "list", "list repositories where command will be run")
 	result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", "add", "register the current (or given) repository in a group")
-	for key, value := range commands {
-		result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", key, value)
+	for _, key := range sortedKeys(commands) {
+		result += fmt.Sprintf("  %-"+strconv.Itoa(maxSize)+"s	%s\n", key, commands[key])
 	}
 
 	return result
@@ -312,7 +312,7 @@ func (config *configuration) ListRepositories() map[string][]string {
 	return result
 }
 
-func sortedKeys(m map[string][]string) []string {
+func sortedKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
 	for key := range m {
 		keys = append(keys, key)
