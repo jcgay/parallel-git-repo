@@ -85,6 +85,14 @@ func TestRunCommandWithIndexedArguments(t *testing.T) {
 	assert.ThatString(output.String()).IsEqualTo(repos.Dir() + ": first path/10 option=third 4-7\n")
 }
 
+func TestForwardArgsLeavesPlaceholderWhenArgumentIsMissing(t *testing.T) {
+	result := forwardArgs([]string{"$1", "$3"}, []string{"only-first"})
+
+	assert := assert.New(t)
+	assert.ThatString(result[0]).IsEqualTo("only-first")
+	assert.ThatString(result[1]).IsEqualTo("$3")
+}
+
 func TestListRepositories(t *testing.T) {
 	dir, _ := ioutil.TempDir("", "ParallelGitReposListRepositories")
 	defer os.RemoveAll(dir)

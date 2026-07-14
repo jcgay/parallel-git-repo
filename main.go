@@ -68,19 +68,29 @@ func main() {
 
 	if printVersion {
 		fmt.Printf("version: %s (%s)", version.VERSION, version.GITCOMMIT)
-	} else {
-		configuration := newConfiguration(home)
-		if os.Args[1] == "list" {
-			repos := configuration.ListRepositories()
-			for key, repos := range repos {
-				fmt.Printf("%s:\n", key)
-				for _, repo := range repos {
-					fmt.Printf("  - %s\n", repo)
-				}
+		return
+	}
+
+	// flag.Args() holds the positional arguments left after global flags have
+	// been parsed. Reading os.Args[1] directly used to panic when the binary was
+	// invoked without a command (e.g. `parallel-git-repo`).
+	args := flag.Args()
+	if len(args) == 0 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	configuration := newConfiguration(home)
+	if args[0] == "list" {
+		repos := configuration.ListRepositories()
+		for key, repos := range repos {
+			fmt.Printf("%s:\n", key)
+			for _, repo := range repos {
+				fmt.Printf("  - %s\n", repo)
 			}
-		} else {
-			runCommand(configuration, withoutFlags(os.Args[1:]), group)
 		}
+	} else {
+		runCommand(configuration, args, group)
 	}
 }
 
@@ -113,20 +123,15 @@ func runCommand(config *configuration, args []string, group string) {
 	if commandName == "run" {
 		toExec = args[1:]
 	} else {
-		toExec = strings.Split(config.ListCommands()[commandName], " ")
+		command, ok := config.ListCommands()[commandName]
+		if !ok {
+			log.Fatalf("Unknown command %q, run with -h to list available commands.", commandName)
+		}
+		toExec = strings.Split(command, " ")
 	}
 
 	runner := newRunner(&run{ToExec: toExec, Quiet: quiet}, config)
 	runner.Run(args[1:], group)
-}
-
-func withoutFlags(args []string) []string {
-	for i, value := range args {
-		if !strings.HasPrefix(value, "-") {
-			return args[i:]
-		}
-	}
-	return args
 }
 
 type repositories interface {
@@ -154,8 +159,11 @@ func tryNewConfiguration(homeDir string) (*configuration, error) {
 }
 
 func (config *configuration) ListRepositories() map[string][]string {
-	repos := config.content.Get("repositories").(*toml.Tree)
 	result := make(map[string][]string)
+	repos, ok := config.content.Get("repositories").(*toml.Tree)
+	if !ok {
+		return result
+	}
 	for _, key := range repos.Keys() {
 		result[key] = toStringArray(repos.Get(key).([]interface{}))
 	}
@@ -171,8 +179,11 @@ func toStringArray(values []interface{}) []string {
 }
 
 func (config *configuration) ListCommands() map[string]string {
-	all := config.content.Get("commands").(*toml.Tree)
 	result := make(map[string]string)
+	all, ok := config.content.Get("commands").(*toml.Tree)
+	if !ok {
+		return result
+	}
 	for _, key := range all.Keys() {
 		result[key] = all.Get(key).(string)
 	}
@@ -234,6 +245,11 @@ func forwardArgs(opts []string, args []string) []string {
 		} else if option.MatchString(opt) {
 			result = append(result, option.ReplaceAllStringFunc(opt, func(substring string) string {
 				index, _ := strconv.Atoi(substring[1:])
+				// Leave the placeholder untouched when no matching argument was
+				// provided, rather than panicking on an out-of-range index.
+				if index < 1 || index > len(args) {
+					return substring
+				}
 				return args[index-1]
 			}))
 		} else {
