@@ -84,6 +84,11 @@ maven-notifier: ✔
 
     parallel-git-repo -g=notifier status
 
+Pass several comma-separated groups, or `all` to run over every group (repositories shared by several groups are only run once):
+
+    parallel-git-repo -g=notifier,maven status
+    parallel-git-repo -g=all fetch
+
 ### Limit how many commands run in parallel
 
 By default at most 8 commands run at once. Use `-j` to change the limit (`-j 1` runs sequentially):
