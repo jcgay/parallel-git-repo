@@ -27,11 +27,13 @@ archives:
 checksum:
   name_template: checksums.txt
 
-homebrew_casks:
+brews:
   - repository:
       owner: jcgay
       name: homebrew-jcgay
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    # Overwrite the existing root-level formula (not a Formula/ subdir).
+    directory: .
     homepage: https://github.com/jcgay/parallel-git-repo
     description: Run command on git repositories in parallel.
     license: MIT
